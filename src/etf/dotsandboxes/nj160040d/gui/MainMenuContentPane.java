@@ -1,22 +1,17 @@
 package etf.dotsandboxes.nj160040d.gui;
 
+import etf.dotsandboxes.nj160040d.logic.AIPlayer;
+import etf.dotsandboxes.nj160040d.logic.Game;
+import etf.dotsandboxes.nj160040d.logic.Player;
 import etf.dotsandboxes.nj160040d.util.SwingUtils;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.io.IOException;
 
-public class MainFrame extends JFrame {
+public class MainMenuContentPane extends JPanel {
 
-    // TODO: Move to separate Game class...
-    public static final String[] aiDifficultyList = { "Competitive", "Advanced", "Beginner" };
-
-    public String getGameStateFileName() {
-        return gameStateFileName;
-    }
-
-    private String gameStateFileName;
+    static String[] aiDifficultyList;
 
     SpinnerModel boardWidthModel, boardHeightModel;
     JRadioButton modePvCRadioButton, modePvPRadioButton, modeCvCRadioButton;
@@ -25,7 +20,15 @@ public class MainFrame extends JFrame {
             aiPlayer2DifficultyModel, aiPlayer2GameTreeDepthModel;
     JPanel aiPlayer1Panel, aiPlayer2Panel;
 
-    public MainFrame() {
+    String gameStateFileName;
+
+    static {
+        AIPlayer.Difficulty[] difficulties = AIPlayer.Difficulty.values();
+        aiDifficultyList = new String[difficulties.length];
+        for (int i = 0; i < difficulties.length; ++i) aiDifficultyList[i] = difficulties[i].toString();
+    }
+
+    public MainMenuContentPane() {
         try {
             initUI();
         } catch (Exception e) {
@@ -33,25 +36,21 @@ public class MainFrame extends JFrame {
         }
     }
 
-    private ActionListener startListener = e -> {
-        // start the game
-    };
-
     private void initUI() throws IOException {
-        JPanel grid = new JPanel(new GridBagLayout());
+        setLayout(new GridBagLayout());
         GridBagConstraints constraints = new GridBagConstraints();
 
         constraints.gridx = 0;
         constraints.gridy = 0;
         constraints.insets = new Insets(5, 5, 5, 5);
 
-        grid.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         JLabel titleLabel = new JLabel(new ImageIcon(SwingUtils.scaleImage("res/title.png", 500)));
-        grid.add(titleLabel, constraints);
+        add(titleLabel, constraints);
 
         ++constraints.gridy;
-        grid.add(SwingUtils.createEmptyLabel(new Dimension(50, 10)), constraints);
+        add(SwingUtils.createEmptyLabel(new Dimension(50, 10)), constraints);
 
         boardWidthModel = new SpinnerNumberModel(3, 2, 50, 1);
         boardHeightModel = new SpinnerNumberModel(3, 2, 30, 1);
@@ -98,7 +97,7 @@ public class MainFrame extends JFrame {
         modePanel.add(modeCvCRadioButton);
         modePanel.setBorder(SwingUtils.createTitledBorder("Mode"));
 
-        SwingUtils.addSplitPanel(grid, constraints, boardSizePanel, modePanel);
+        SwingUtils.addSplitPanel(this, constraints, boardSizePanel, modePanel);
 
         gameStateFileTextField = new JTextField("Click the 'Open' button to choose a file");
         gameStateFileTextField.setEditable(false);
@@ -130,7 +129,7 @@ public class MainFrame extends JFrame {
         gameStateFilePanel.setBorder(SwingUtils.createTitledBorder("Load game state"));
 
         ++constraints.gridy;
-        grid.add(gameStateFilePanel, constraints);
+        add(gameStateFilePanel, constraints);
 
         aiPlayer1DifficultyModel = new SpinnerListModel(aiDifficultyList);
         aiPlayer1DifficultyModel.setValue("Beginner");
@@ -162,24 +161,21 @@ public class MainFrame extends JFrame {
         aiPlayer2Panel.setBorder(SwingUtils.createTitledBorder("AI Player 2 Settings"));
         SwingUtils.setPanelEnabled(aiPlayer2Panel, true);
 
-        SwingUtils.addSplitPanel(grid, constraints, aiPlayer1Panel, aiPlayer2Panel);
+        SwingUtils.addSplitPanel(this, constraints, aiPlayer1Panel, aiPlayer2Panel);
 
         ++constraints.gridy;
-        grid.add(SwingUtils.createEmptyLabel(new Dimension(50, 10)), constraints);
+        add(SwingUtils.createEmptyLabel(new Dimension(50, 10)), constraints);
 
         JButton startButton = new JButton("Start");
-        startButton.addActionListener(startListener);
+        startButton.addActionListener(e -> Game.startGame(
+                (int) boardWidthModel.getValue(),
+                (int) boardHeightModel.getValue(),
+                new Player(), // TODO: set player 1
+                new Player())); // TODO: set player 2
         ++constraints.gridy;
-        grid.add(startButton, constraints);
+        add(startButton, constraints);
 
         ++constraints.gridy;
-        grid.add(SwingUtils.createEmptyLabel(new Dimension(50, 10)), constraints);
-
-        setTitle("Dots & Boxes");
-        setLocationRelativeTo(null);
-        setResizable(false);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setContentPane(grid);
-        pack();
+        add(SwingUtils.createEmptyLabel(new Dimension(50, 10)), constraints);
     }
 }

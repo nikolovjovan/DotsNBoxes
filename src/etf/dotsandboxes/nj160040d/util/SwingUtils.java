@@ -52,7 +52,7 @@ public class SwingUtils {
         return createTitledBorder(title, 5);
     }
 
-    public static void addSplitPanel(JPanel grid, GridBagConstraints constraints, JPanel leftPanel, JPanel rightPanel) {
+    public static void addSplitPanel(JPanel panel, GridBagConstraints constraints, JPanel leftPanel, JPanel rightPanel) {
         JPanel splitPanel = new JPanel();
         GridLayout splitPanelLayout = new GridLayout(1, 2);
         splitPanelLayout.setHgap(20);
@@ -60,7 +60,7 @@ public class SwingUtils {
         splitPanel.add(leftPanel);
         splitPanel.add(rightPanel);
         ++constraints.gridy;
-        grid.add(splitPanel, constraints);
+        panel.add(splitPanel, constraints);
     }
 
     public static void setPanelEnabled(JPanel panel, Boolean isEnabled) {
