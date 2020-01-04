@@ -1,7 +1,8 @@
 package etf.dotsandboxes.nj160040d.gui;
 
 import etf.dotsandboxes.nj160040d.logic.AIPlayer;
-import etf.dotsandboxes.nj160040d.logic.Game;
+import etf.dotsandboxes.nj160040d.Game;
+import etf.dotsandboxes.nj160040d.logic.Board;
 import etf.dotsandboxes.nj160040d.logic.Player;
 import etf.dotsandboxes.nj160040d.util.SwingUtils;
 
@@ -168,8 +169,7 @@ public class MainMenuContentPane extends JPanel {
 
         JButton startButton = new JButton("Start");
         startButton.addActionListener(e -> Game.startGame(
-                (int) boardWidthModel.getValue(),
-                (int) boardHeightModel.getValue(),
+                new Board((int) boardWidthModel.getValue(), (int) boardHeightModel.getValue()),
                 new Player(), // TODO: set player 1
                 new Player())); // TODO: set player 2
         ++constraints.gridy;

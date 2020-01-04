@@ -1,21 +1,21 @@
-package etf.dotsandboxes.nj160040d.logic;
+package etf.dotsandboxes.nj160040d;
 
 import etf.dotsandboxes.nj160040d.gui.GameFrame;
+import etf.dotsandboxes.nj160040d.logic.Board;
+import etf.dotsandboxes.nj160040d.logic.Player;
 
 import java.awt.EventQueue;
 
 public class Game {
 
     private static GameFrame gameFrame;
-    private static int boardWidth, boardHeight;
+    private static Board board;
     private static Player player1, player2;
     private static int turn;
-    private static boolean[][] hEdgeMatrix, vEdgeMatrix, boxMatrix;
 
     private Game() {}
 
-    public static int getBoardWidth() { return boardWidth; }
-    public static int getBoardHeight() { return boardHeight; }
+    public static Board getBoard() { return board; }
 
     public static Player getPlayer1() { return player1; }
     public static Player getPlayer2() { return player2; }
@@ -23,22 +23,15 @@ public class Game {
     public static int getTurn() { return turn; }
 
     public static void nextTurn() {
+        // TODO: add turn change logic
         turn++;
     }
 
-    public static boolean[][] getHEdgeMatrix() { return hEdgeMatrix; }
-    public static boolean[][] getVEdgeMatrix() { return vEdgeMatrix; }
-    public static boolean[][] getBoxMatrix() { return boxMatrix; }
-
-    public static void startGame(int boardWidth, int boardHeight, Player player1, Player player2) {
-        Game.boardWidth = boardWidth;
-        Game.boardHeight = boardHeight;
+    public static void startGame(Board board, Player player1, Player player2) {
+        Game.board = board;
         Game.player1 = player1;
         Game.player2 = player2;
-        turn = 0; // even = player 1, odd = player 2
-        hEdgeMatrix = new boolean[boardHeight + 1][boardWidth];
-        vEdgeMatrix = new boolean[boardHeight][boardWidth + 1];
-        boxMatrix = new boolean[boardHeight][boardWidth];
+        turn = 1; // odd = player 1, even = player 2
         gameFrame.showGameBoard();
     }
 

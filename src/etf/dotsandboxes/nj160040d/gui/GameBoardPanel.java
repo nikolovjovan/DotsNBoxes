@@ -1,85 +1,85 @@
 package etf.dotsandboxes.nj160040d.gui;
 
-import etf.dotsandboxes.nj160040d.logic.Game;
+import etf.dotsandboxes.nj160040d.Game;
+import etf.dotsandboxes.nj160040d.logic.Board;
+import etf.dotsandboxes.nj160040d.logic.Box;
+import etf.dotsandboxes.nj160040d.logic.Edge;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 
 public class GameBoardPanel extends JPanel {
 
-    static int radioButtonDiameter = 12;
-    static int edgeThickness = 4;
+    static final int dotDiameter                = 10;
+    static final int edgeThickness              = 4;
+    static final int highlightedDotDiameter     = 12;
+    static final int highlightedEdgeThickness   = 2;
 
-    enum FillColor {
-        TRANSPARENT, BLACK, RED, DARK_RED, BLUE, DARK_BLUE;
+    static final boolean renderFlatDot = true;
 
-        static Color colorTransparent = new Color(0, 0, 0, 0);
-        static Color colorBlack = new Color(16, 16, 16);
-        static Color colorRed = new Color(240, 8, 0);
-        static Color colorDarkRed = new Color(192, 8, 0);
-        static Color colorBlue = new Color(0, 80, 240);
-        static Color colorDarkBlue = new Color(0, 56, 192);
+    static final int maxDotRadius = (int) Math.ceil((double) Math.max(dotDiameter, highlightedDotDiameter) / 2);
 
-        public Color toColor() {
-            switch (this) {
-                case TRANSPARENT: return colorTransparent;
-                case BLACK: return colorBlack;
-                case RED: return colorRed;
-                case BLUE: return colorBlue;
-                case DARK_RED: return colorDarkRed;
-                case DARK_BLUE: return colorDarkBlue;
-                default: return null;
-            }
+    static final byte TRANSPARENT = 0;
+    static final byte BLACK       = 1;
+    static final byte RED         = 2;
+    static final byte BLUE        = 3;
+    static final byte DARK_RED    = 4;
+    static final byte DARK_BLUE   = 5;
+
+    static final Color colorTransparent   = new Color(0, 0, 0, 0);
+    static final Color colorBlack         = new Color(16, 16, 16);
+    static final Color colorRed           = new Color(240, 8, 0);
+    static final Color colorDarkRed       = new Color(192, 8, 0);
+    static final Color colorBlue          = new Color(0, 80, 240);
+    static final Color colorDarkBlue      = new Color(0, 56, 192);
+
+    static Color valueToColor(byte value) {
+        switch (value) {
+            case TRANSPARENT:   return colorTransparent;
+            case BLACK:         return colorBlack;
+            case RED:           return colorRed;
+            case BLUE:          return colorBlue;
+            case DARK_RED:      return colorDarkRed;
+            case DARK_BLUE:     return colorDarkBlue;
+            default:            return null;
         }
     }
 
-    int width, height, borderThickness, spacing;
+    Board board;
+    int borderThickness, spacing, edgeLength;
+    Point topLeft, bottomRight;
+    Edge lastEdge, highlightedEdge;
+    byte colorValue, darkColorValue;
 
-    FillColor[][] hEdgeColorMatrix, vEdgeColorMatrix, boxColorMatrix;
-
-    boolean selecting;
-    int selectedDotX, selectedDotY;
-
-    boolean lastEdgeHorizontal;
-    int lastEdgeX, lastEdgeY;
-
-    JRadioButton[][] buttonMatrix;
-
-    public GameBoardPanel(int width, int height, int borderThickness) {
-        this.width = width;
-        this.height = height;
+    public GameBoardPanel(Board board, int borderThickness) {
+        this.board = board;
         this.borderThickness = borderThickness;
 
-        if (width <= 10 && height <= 10) this.spacing = 40;
-        else if (width <= 30 && height <= 20) this.spacing = 25;
-        else this.spacing = 10;
+        if (board.getWidth() <= 8 && board.getHeight() <= 4) this.spacing = 96;
+        if (board.getWidth() <= 16 && board.getHeight() <= 8) this.spacing = 72;
+        else if (board.getWidth() <= 24 && board.getHeight() <= 12) this.spacing = 48;
+        else if (board.getWidth() <= 32 && board.getHeight() <= 16) this.spacing = 32;
+        else if (board.getHeight() <= 40 && board.getHeight() <= 20) this.spacing = 20;
+        else if (board.getHeight() <= 48 && board.getHeight() <= 24) this.spacing = 16;
+        else this.spacing = 12;
 
-        this.hEdgeColorMatrix = new FillColor[height + 1][width];
-        this.vEdgeColorMatrix = new FillColor[height][width + 1];
-        this.boxColorMatrix = new FillColor[height][width];
+        this.edgeLength = spacing + dotDiameter;
 
-        for (int i = 0; i < height + 1; ++i)
-            for (int j = 0; j < width + 1; ++j) {
-                if (j < width) this.hEdgeColorMatrix[i][j] = FillColor.TRANSPARENT;
-                if (i < height) this.vEdgeColorMatrix[i][j] = FillColor.TRANSPARENT;
-                if (j < width && i < height) {
-                    if (i == j) {
-                        // TEMPORARY, REMOVE
-                        this.boxColorMatrix[i][i] = i % 2 == 0 ? FillColor.RED : FillColor.BLUE;
-                    } else {
-                        this.boxColorMatrix[i][j] = FillColor.TRANSPARENT;
-                    }
-                }
-            }
+        this.topLeft = new Point(
+                this.borderThickness + maxDotRadius,
+                this.borderThickness + maxDotRadius
+        );
 
-        this.selecting = false;
-        this.selectedDotX = -1;
-        this.selectedDotY = -1;
+        this.bottomRight = new Point(
+                this.topLeft.x + this.edgeLength * this.board.getWidth(),
+                this.topLeft.y + this.edgeLength * this.board.getHeight()
+        );
 
-        this.lastEdgeHorizontal = false;
-        this.lastEdgeX = -1;
-        this.lastEdgeY = -1;
+        this.lastEdge = new Edge();
+        this.highlightedEdge = new Edge();
+
+        updateColors();
 
         try {
             initUI();
@@ -88,164 +88,139 @@ public class GameBoardPanel extends JPanel {
         }
     }
 
-    private void drawBox(Graphics g, Color color, int x, int y) {
-        g.setColor(color);
-        g.fillRect(
-                borderThickness + radioButtonDiameter / 2 + (spacing + radioButtonDiameter) * x,
-                borderThickness + radioButtonDiameter / 2 + (spacing + radioButtonDiameter) * y,
-                spacing + radioButtonDiameter,
-                spacing + radioButtonDiameter
-        );
+    public void updateColors() {
+        colorValue = Game.getTurn() % 2 == 1 ? RED : BLUE;
+        darkColorValue = Game.getTurn() % 2 == 1 ? DARK_RED : DARK_BLUE;
+        highlightedEdge.setValue(colorValue);
     }
 
-    private void drawHorizontalEdge(Graphics g, Color color, int x, int y) {
-        g.setColor(color);
-        g.fillRect(
-                borderThickness + radioButtonDiameter / 2 + (spacing + radioButtonDiameter) * x,
-                borderThickness + (radioButtonDiameter - edgeThickness) / 2 + (spacing + radioButtonDiameter) * y,
-                spacing + radioButtonDiameter,
-                edgeThickness
-        );
+    private void initUI() {
+        setPreferredSize(new Dimension(
+                bottomRight.x + maxDotRadius + borderThickness,
+                bottomRight.y + maxDotRadius + borderThickness
+        ));
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (!highlightedEdge.isValid()) return;
+                if (lastEdge.isValid()) board.setEdgeValue(lastEdge, BLACK);
+                if (board.getNumberOfAvailableMoves() > 1) {
+                    board.updateEdgeValue(highlightedEdge, darkColorValue, colorValue);
+                    lastEdge.copy(highlightedEdge);
+                } else {
+                    board.updateEdgeValue(highlightedEdge, BLACK, colorValue);
+                    lastEdge.invalidate();
+                }
+                highlightedEdge.invalidate();
+                Game.nextTurn();
+                repaint();
+                updateColors();
+            }
+        });
+        addMouseMotionListener(new MouseAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                if (e.getX() < topLeft.x || e.getX() > bottomRight.x ||
+                    e.getY() < topLeft.y || e.getY() > bottomRight.y) {
+                    highlightedEdge.invalidate();
+                } else {
+                    int x = (e.getX() - topLeft.x) % edgeLength,
+                        y = (e.getY() - topLeft.y) % edgeLength,
+                        boardX = (e.getX() - topLeft.x) / edgeLength,
+                        boardY = (e.getY() - topLeft.y) / edgeLength;
+                    if (x >= y && x < edgeLength - y) highlightedEdge.setAsTopEdge(boardX, boardY);
+                    else if (x >= (edgeLength - y) && x < y) highlightedEdge.setAsBottomEdge(boardX, boardY);
+                    else if (y >= x && y < (edgeLength - x)) highlightedEdge.setAsLeftEdge(boardX, boardY);
+                    else if (y > (edgeLength - x) && y < x) highlightedEdge.setAsRightEdge(boardX, boardY);
+                    else highlightedEdge.invalidate();
+                }
+                if (highlightedEdge.isValid() && board.isEdgeSet(highlightedEdge)) highlightedEdge.invalidate();
+                repaint();
+            }
+        });
     }
 
-    private void drawVerticalEdge(Graphics g, Color color, int x, int y) {
-        g.setColor(color);
-        g.fillRect(
-                borderThickness + (radioButtonDiameter - edgeThickness) / 2 + (spacing + radioButtonDiameter) * x,
-                borderThickness + radioButtonDiameter / 2 + (spacing + radioButtonDiameter) * y,
-                edgeThickness,
-                spacing + radioButtonDiameter
+    private void renderBox(Graphics g, Box box) {
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setColor(valueToColor(box.getValue()));
+        gg.fillRect(
+                topLeft.x + edgeLength * box.getX(),
+                topLeft.y + edgeLength * box.getY(),
+                edgeLength,
+                edgeLength
         );
+        gg.dispose();
+    }
+
+    private void renderEdge(Graphics g, Edge edge, int thickness, boolean dotted) {
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setColor(valueToColor(edge.getValue()));
+        gg.setStroke(new BasicStroke(
+                thickness,
+                BasicStroke.CAP_BUTT,
+                BasicStroke.JOIN_BEVEL,
+                0,
+                dotted ? new float[]{5, 3} : null,
+                0
+        ));
+        gg.drawLine(
+                topLeft.x + edgeLength * edge.getX(),
+                topLeft.y + edgeLength * edge.getY(),
+                topLeft.x + edgeLength * (edge.getX() + (edge.isHorizontal() ? 1 : 0)),
+                topLeft.y + edgeLength * (edge.getY() + (edge.isHorizontal() ? 0 : 1))
+        );
+        gg.dispose();
+    }
+
+    private void renderDot(Graphics g, int x, int y, int diameter) {
+        int dotX = topLeft.x + edgeLength * x - diameter / 2, dotY = topLeft.y + edgeLength * y - diameter / 2;
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        if (renderFlatDot) {
+            gg.setColor(colorBlack);
+            gg.fillOval(dotX, dotY, diameter, diameter);
+        } else {
+            gg.setColor(Color.DARK_GRAY);
+            gg.fillArc(dotX, dotY, diameter, diameter, 45, 180);
+            gg.setColor(Color.BLACK);
+            gg.fillArc(dotX, dotY, diameter, diameter, 225, 180);
+            gg.setColor(colorBlack);
+            gg.rotate(Math.toRadians(-45), dotX + (double) diameter / 2, dotY + (double) diameter / 2);
+            gg.fillOval(dotX, dotY + 1, diameter, diameter - 2);
+        }
+        gg.dispose();
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        getBorder().getBorderInsets(this);
-
-        for (int i = 0; i < height; ++i)
-            for (int j = 0; j < width; ++j)
-                if (boxColorMatrix[i][j] != FillColor.TRANSPARENT) {
-                    drawBox(g, boxColorMatrix[i][j].toColor(), j, i);
+        for (int i = 0; i < board.getHeight(); ++i)
+            for (int j = 0; j < board.getWidth(); ++j)
+                if (board.isBoxSet(j, i)) {
+                    renderBox(g, board.getBox(j, i));
                 }
 
-        for (int i = 0; i <= height; ++i)
-            for (int j = 0; j < width; ++j)
-                if (hEdgeColorMatrix[i][j] != FillColor.TRANSPARENT) {
-                    drawHorizontalEdge(g, hEdgeColorMatrix[i][j].toColor(), j, i);
-                }
+        for (int i = 0; i <= board.getHeight(); ++i)
+            for (int j = 0; j < board.getWidth(); ++j)
+                renderEdge(g, board.getEdge(true, j, i ), edgeThickness, false);
 
-        for (int i = 0; i < height; ++i)
-            for (int j = 0; j <= width; ++j)
-                if (vEdgeColorMatrix[i][j] != FillColor.TRANSPARENT) {
-                    drawVerticalEdge(g, vEdgeColorMatrix[i][j].toColor(), j, i);
-                }
-    }
+        for (int i = 0; i < board.getHeight(); ++i)
+            for (int j = 0; j <= board.getWidth(); ++j)
+                renderEdge(g, board.getEdge(false, j, i), edgeThickness, false);
 
-    private ActionListener dotClickListener = e -> {
-        JRadioButton button = (JRadioButton) e.getSource();
-        handleDotClick((int) button.getClientProperty("x"), (int) button.getClientProperty("y"));
-    };
-
-    private void handleDotClick(int x, int y) {
-        if (!selecting) {
-            selecting = true;
-            selectedDotX = x;
-            selectedDotY = y;
-        } else {
-            if (selectedDotX == x && selectedDotY == y) {
-                // cancel current selection
-                selecting = false;
-                buttonMatrix[selectedDotY][selectedDotX].setSelected(false);
-            } else if (Math.abs(selectedDotX - x) + Math.abs(selectedDotY - y) > 1) {
-                // invalid second dot, deselect it
-                buttonMatrix[y][x].setSelected(false);
-            } else {
-                // valid selection, deselect first and second dots
-                selecting = false;
-                buttonMatrix[selectedDotY][selectedDotX].setSelected(false);
-                buttonMatrix[y][x].setSelected(false);
-                if (lastEdgeX != -1 && lastEdgeY != -1) {
-                    if (lastEdgeHorizontal) {
-                        hEdgeColorMatrix[lastEdgeY][lastEdgeX] = FillColor.BLACK;
-                    } else {
-                        vEdgeColorMatrix[lastEdgeY][lastEdgeX] = FillColor.BLACK;
-                    }
-                }
-                if (selectedDotY == y) { // horizontal edge
-                    lastEdgeHorizontal = true;
-                    lastEdgeX = Math.min(selectedDotX, x);
-                    lastEdgeY = y;
-                    Game.getHEdgeMatrix()[lastEdgeY][lastEdgeX] = true;
-                    hEdgeColorMatrix[lastEdgeY][lastEdgeX] =
-                            Game.getTurn() % 2 == 0 ? FillColor.DARK_RED : FillColor.DARK_BLUE;
-                    if (lastEdgeY > 0) { // check upper box
-                        if (Game.getHEdgeMatrix()[lastEdgeY - 1][lastEdgeX] &&
-                                Game.getVEdgeMatrix()[lastEdgeY - 1][lastEdgeX] &&
-                                Game.getVEdgeMatrix()[lastEdgeY - 1][lastEdgeX + 1]) {
-                            Game.getBoxMatrix()[lastEdgeY - 1][lastEdgeX] = true;
-                            boxColorMatrix[lastEdgeY - 1][lastEdgeX] =
-                                    Game.getTurn() % 2 == 0 ? FillColor.RED : FillColor.BLUE;
-                        }
-                    }
-                    if (lastEdgeY < height) { // check lower box
-                        if (Game.getHEdgeMatrix()[lastEdgeY + 1][lastEdgeX] &&
-                                Game.getVEdgeMatrix()[lastEdgeY][lastEdgeX] &&
-                                Game.getVEdgeMatrix()[lastEdgeY][lastEdgeX + 1]) {
-                            Game.getBoxMatrix()[lastEdgeY][lastEdgeX] = true;
-                            boxColorMatrix[lastEdgeY][lastEdgeX] =
-                                    Game.getTurn() % 2 == 0 ? FillColor.RED : FillColor.BLUE;
-                        }
-                    }
-                } else { // vertical edge
-                    lastEdgeHorizontal = false;
-                    lastEdgeX = x;
-                    lastEdgeY = Math.min(selectedDotY, y);
-                    Game.getVEdgeMatrix()[lastEdgeY][lastEdgeX] = true;
-                    vEdgeColorMatrix[lastEdgeY][lastEdgeX] =
-                            Game.getTurn() % 2 == 0 ? FillColor.DARK_RED : FillColor.DARK_BLUE;
-                    if (lastEdgeX > 0) { // check left side box
-                        if (Game.getVEdgeMatrix()[lastEdgeY][lastEdgeX - 1] &&
-                                Game.getHEdgeMatrix()[lastEdgeY][lastEdgeX - 1] &&
-                                Game.getHEdgeMatrix()[lastEdgeY + 1][lastEdgeX - 1]) {
-                            Game.getBoxMatrix()[lastEdgeY][lastEdgeX - 1] = true;
-                            boxColorMatrix[lastEdgeY][lastEdgeX - 1] =
-                                    Game.getTurn() % 2 == 0 ? FillColor.RED : FillColor.BLUE;
-                        }
-                    }
-                    if (lastEdgeX < width) { // check right side box
-                        if (Game.getVEdgeMatrix()[lastEdgeY][lastEdgeX + 1] &&
-                                Game.getHEdgeMatrix()[lastEdgeY][lastEdgeX] &&
-                                Game.getHEdgeMatrix()[lastEdgeY + 1][lastEdgeX]) {
-                            Game.getBoxMatrix()[lastEdgeY][lastEdgeX] = true;
-                            boxColorMatrix[lastEdgeY][lastEdgeX] =
-                                    Game.getTurn() % 2 == 0 ? FillColor.RED : FillColor.BLUE;
-                        }
-                    }
-                }
-                repaint();
-                Game.nextTurn();
-            }
+        if (highlightedEdge.isValid()) {
+            renderEdge(g, highlightedEdge, highlightedEdgeThickness, true);
         }
-    }
 
-    private void initUI() {
-        // hgap and vgap reduced by 1px because it seems to add 1px somewhere...
-        setLayout(new GridLayout(height + 1, width + 1, spacing - 1, spacing - 1));
-        buttonMatrix = new JRadioButton[height + 1][width + 1];
-        for (int i = 0; i <= height; ++i)
-            for (int j = 0; j <= width; ++j) {
-                buttonMatrix[i][j] = new JRadioButton();
-                buttonMatrix[i][j].putClientProperty("x", j);
-                buttonMatrix[i][j].putClientProperty("y", i);
-                buttonMatrix[i][j].setOpaque(false);
-                buttonMatrix[i][j].setBorder(null);
-                buttonMatrix[i][j].addActionListener(dotClickListener);
-                add(buttonMatrix[i][j]);
-            }
-        if (borderThickness > 0) {
-            setBorder(BorderFactory.createEmptyBorder(borderThickness, borderThickness, borderThickness, borderThickness));
-        }
+        for (int i = 0; i <= board.getHeight(); ++i)
+            for (int j = 0; j <= board.getWidth(); ++j)
+                if (j == highlightedEdge.getX() && i == highlightedEdge.getY() ||
+                        highlightedEdge.isHorizontal() && j == highlightedEdge.getX() + 1 && i == highlightedEdge.getY() ||
+                        !highlightedEdge.isHorizontal() && j == highlightedEdge.getX() && i == highlightedEdge.getY() + 1) {
+                    renderDot(g, j, i, highlightedDotDiameter);
+                } else {
+                    renderDot(g, j, i, dotDiameter);
+                }
     }
 }
