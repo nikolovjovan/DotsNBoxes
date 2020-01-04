@@ -2,25 +2,25 @@ package etf.dotsandboxes.nj160040d.logic;
 
 public class Edge {
 
-    byte value;
+    byte colorValue;
     int x, y;
     boolean horizontal;
 
     public Edge() {
-        value = 0;
+        colorValue = 0;
         x = y = -1;
         horizontal = false;
     }
 
-    public Edge(byte value, int x, int y, boolean horizontal) {
-        this.value = value;
+    public Edge(byte colorValue, int x, int y, boolean horizontal) {
+        this.colorValue = colorValue;
         this.x = x;
         this.y = y;
         this.horizontal = horizontal;
     }
 
     public void copy(Edge edge) {
-        value = edge.value;
+        colorValue = edge.colorValue;
         x = edge.x;
         y = edge.y;
         horizontal = edge.horizontal;
@@ -29,8 +29,8 @@ public class Edge {
     public boolean isValid() { return x >= 0 && y >= 0; }
     public void invalidate() { x = y = -1; }
 
-    public byte getValue() { return value; }
-    public void setValue(byte value) { this.value = value; }
+    public byte getColorValue() { return colorValue; }
+    public void setColorValue(byte colorValue) { this.colorValue = colorValue; }
 
     public boolean isHorizontal() { return horizontal; }
     public void setHorizontal(boolean value) { horizontal = value; }

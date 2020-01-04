@@ -2,6 +2,7 @@ package etf.dotsandboxes.nj160040d;
 
 import etf.dotsandboxes.nj160040d.gui.GameFrame;
 import etf.dotsandboxes.nj160040d.logic.Board;
+import etf.dotsandboxes.nj160040d.logic.ColorValue;
 import etf.dotsandboxes.nj160040d.logic.Player;
 
 import java.awt.EventQueue;
@@ -12,6 +13,7 @@ public class Game {
     private static Board board;
     private static Player player1, player2;
     private static int turn;
+    private static byte currentColorValue;
 
     private Game() {}
 
@@ -22,9 +24,12 @@ public class Game {
 
     public static int getTurn() { return turn; }
 
+    public static byte getCurrentColorValue() { return  currentColorValue; }
+
     public static void nextTurn() {
         // TODO: add turn change logic
         turn++;
+        currentColorValue = turn % 2 == 1 ? ColorValue.BLUE : ColorValue.RED;
     }
 
     public static void startGame(Board board, Player player1, Player player2) {
@@ -32,6 +37,7 @@ public class Game {
         Game.player1 = player1;
         Game.player2 = player2;
         turn = 1; // odd = player 1, even = player 2
+        currentColorValue = ColorValue.BLUE;
         gameFrame.showGameBoard();
     }
 

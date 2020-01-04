@@ -2,22 +2,22 @@ package etf.dotsandboxes.nj160040d.logic;
 
 public class Box {
 
-    byte value;
+    byte colorValue;
     int x, y;
 
     public Box() {
-        value = -1;
+        colorValue = -1;
         x = y = -1;
     }
 
-    public Box(byte value, int x, int y) {
-        this.value = value;
+    public Box(byte colorValue, int x, int y) {
+        this.colorValue = colorValue;
         this.x = x;
         this.y = y;
     }
 
-    public byte getValue() { return value; }
-    public void setValue(byte value) { this.value = value; }
+    public byte getColorValue() { return colorValue; }
+    public void setColorValue(byte colorValue) { this.colorValue = colorValue; }
 
     public int getX() { return x; }
     public int getY() { return y; }

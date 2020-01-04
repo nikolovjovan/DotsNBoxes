@@ -3,6 +3,7 @@ package etf.dotsandboxes.nj160040d.gui;
 import etf.dotsandboxes.nj160040d.Game;
 import etf.dotsandboxes.nj160040d.logic.Board;
 import etf.dotsandboxes.nj160040d.logic.Box;
+import etf.dotsandboxes.nj160040d.logic.ColorValue;
 import etf.dotsandboxes.nj160040d.logic.Edge;
 
 import javax.swing.*;
@@ -20,29 +21,22 @@ public class GameBoardPanel extends JPanel {
 
     static final int maxDotRadius = (int) Math.ceil((double) Math.max(dotDiameter, highlightedDotDiameter) / 2);
 
-    static final byte TRANSPARENT = 0;
-    static final byte BLACK       = 1;
-    static final byte RED         = 2;
-    static final byte BLUE        = 3;
-    static final byte DARK_RED    = 4;
-    static final byte DARK_BLUE   = 5;
-
     static final Color colorTransparent   = new Color(0, 0, 0, 0);
-    static final Color colorBlack         = new Color(16, 16, 16);
-    static final Color colorRed           = new Color(240, 8, 0);
-    static final Color colorDarkRed       = new Color(192, 8, 0);
     static final Color colorBlue          = new Color(0, 80, 240);
+    static final Color colorRed           = new Color(240, 8, 0);
     static final Color colorDarkBlue      = new Color(0, 56, 192);
+    static final Color colorDarkRed       = new Color(192, 8, 0);
+    static final Color colorBlack         = new Color(16, 16, 16);
 
     static Color valueToColor(byte value) {
         switch (value) {
-            case TRANSPARENT:   return colorTransparent;
-            case BLACK:         return colorBlack;
-            case RED:           return colorRed;
-            case BLUE:          return colorBlue;
-            case DARK_RED:      return colorDarkRed;
-            case DARK_BLUE:     return colorDarkBlue;
-            default:            return null;
+            case ColorValue.TRANSPARENT:    return colorTransparent;
+            case ColorValue.BLUE:           return colorBlue;
+            case ColorValue.RED:            return colorRed;
+            case ColorValue.DARK_BLUE:      return colorDarkBlue;
+            case ColorValue.DARK_RED:       return colorDarkRed;
+            case ColorValue.BLACK:          return colorBlack;
+            default:                        return null;
         }
     }
 
@@ -50,7 +44,6 @@ public class GameBoardPanel extends JPanel {
     int borderThickness, spacing, edgeLength;
     Point topLeft, bottomRight;
     Edge lastEdge, highlightedEdge;
-    byte colorValue, darkColorValue;
 
     public GameBoardPanel(Board board, int borderThickness) {
         this.board = board;
@@ -78,20 +71,13 @@ public class GameBoardPanel extends JPanel {
 
         this.lastEdge = new Edge();
         this.highlightedEdge = new Edge();
-
-        updateColors();
+        this.highlightedEdge.setColorValue(Game.getCurrentColorValue());
 
         try {
             initUI();
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    public void updateColors() {
-        colorValue = Game.getTurn() % 2 == 1 ? RED : BLUE;
-        darkColorValue = Game.getTurn() % 2 == 1 ? DARK_RED : DARK_BLUE;
-        highlightedEdge.setValue(colorValue);
     }
 
     private void initUI() {
@@ -103,18 +89,14 @@ public class GameBoardPanel extends JPanel {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (!highlightedEdge.isValid()) return;
-                if (lastEdge.isValid()) board.setEdgeValue(lastEdge, BLACK);
-                if (board.getNumberOfAvailableMoves() > 1) {
-                    board.updateEdgeValue(highlightedEdge, darkColorValue, colorValue);
-                    lastEdge.copy(highlightedEdge);
-                } else {
-                    board.updateEdgeValue(highlightedEdge, BLACK, colorValue);
-                    lastEdge.invalidate();
-                }
+                if (lastEdge.isValid()) board.setEdgeColorValue(lastEdge, ColorValue.BLACK);
+                board.playerDrawEdge(highlightedEdge);
+                if (board.getNumberOfAvailableMoves() > 0) lastEdge.copy(highlightedEdge);
+                else lastEdge.invalidate();
                 highlightedEdge.invalidate();
                 Game.nextTurn();
+                highlightedEdge.setColorValue(Game.getCurrentColorValue());
                 repaint();
-                updateColors();
             }
         });
         addMouseMotionListener(new MouseAdapter() {
@@ -142,7 +124,7 @@ public class GameBoardPanel extends JPanel {
 
     private void renderBox(Graphics g, Box box) {
         Graphics2D gg = (Graphics2D) g.create();
-        gg.setColor(valueToColor(box.getValue()));
+        gg.setColor(valueToColor(box.getColorValue()));
         gg.fillRect(
                 topLeft.x + edgeLength * box.getX(),
                 topLeft.y + edgeLength * box.getY(),
@@ -154,7 +136,7 @@ public class GameBoardPanel extends JPanel {
 
     private void renderEdge(Graphics g, Edge edge, int thickness, boolean dotted) {
         Graphics2D gg = (Graphics2D) g.create();
-        gg.setColor(valueToColor(edge.getValue()));
+        gg.setColor(valueToColor(edge.getColorValue()));
         gg.setStroke(new BasicStroke(
                 thickness,
                 BasicStroke.CAP_BUTT,
