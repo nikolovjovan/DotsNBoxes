@@ -1,12 +1,11 @@
 package etf.dotsandboxes.nj160040d.gui;
 
-import etf.dotsandboxes.nj160040d.logic.AIPlayer;
+import etf.dotsandboxes.nj160040d.logic.*;
 import etf.dotsandboxes.nj160040d.Game;
-import etf.dotsandboxes.nj160040d.logic.Board;
-import etf.dotsandboxes.nj160040d.logic.Player;
 import etf.dotsandboxes.nj160040d.util.SwingUtils;
 
 import javax.swing.*;
+import javax.swing.Box;
 import java.awt.*;
 import java.io.IOException;
 
@@ -16,10 +15,10 @@ public class MainMenuContentPane extends JPanel {
 
     SpinnerModel boardWidthModel, boardHeightModel;
     JRadioButton modePvCRadioButton, modePvPRadioButton, modeCvCRadioButton;
-    JTextField gameStateFileTextField;
+    JTextField player1NameTextField, player2NameTextField, gameStateFileTextField;
     SpinnerModel aiPlayer1DifficultyModel, aiPlayer1GameTreeDepthModel,
             aiPlayer2DifficultyModel, aiPlayer2GameTreeDepthModel;
-    JPanel aiPlayer1Panel, aiPlayer2Panel;
+    JPanel boardSizePanel, aiPlayer1Panel, aiPlayer2Panel;
 
     String gameStateFileName;
 
@@ -53,10 +52,44 @@ public class MainMenuContentPane extends JPanel {
         ++constraints.gridy;
         add(SwingUtils.createEmptyLabel(new Dimension(50, 10)), constraints);
 
+        gameStateFileTextField = new JTextField("Click the 'Open' button to choose a file");
+        gameStateFileTextField.setEditable(false);
+
+        JButton gameStateFileOpenButton = new JButton("Open");
+        gameStateFileOpenButton.addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser();
+            int returnVal = fileChooser.showOpenDialog(this);
+            if (returnVal == JFileChooser.APPROVE_OPTION) {
+                gameStateFileName = fileChooser.getSelectedFile().getName();
+                gameStateFileTextField.setText(gameStateFileName);
+                SwingUtils.setPanelEnabled(boardSizePanel, false);
+            }
+        });
+
+        JButton gameStateFileCancelButton = new JButton("Cancel");
+        gameStateFileCancelButton.addActionListener(e -> {
+            gameStateFileName = null;
+            gameStateFileTextField.setText("Click the 'Open' button to choose a file");
+            SwingUtils.setPanelEnabled(boardSizePanel, true);
+        });
+
+        JPanel gameStateFilePanel = new JPanel();
+        gameStateFilePanel.setLayout(new BoxLayout(gameStateFilePanel, BoxLayout.X_AXIS));
+        gameStateFilePanel.add(Box.createRigidArea(new Dimension(5, 0)));
+        gameStateFilePanel.add(gameStateFileTextField);
+        gameStateFilePanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        gameStateFilePanel.add(gameStateFileOpenButton);
+        gameStateFilePanel.add(Box.createRigidArea(new Dimension(5, 0)));
+        gameStateFilePanel.add(gameStateFileCancelButton);
+        gameStateFilePanel.setBorder(SwingUtils.createTitledBorder("Load game state"));
+
+        ++constraints.gridy;
+        add(gameStateFilePanel, constraints);
+
         boardWidthModel = new SpinnerNumberModel(3, 2, 50, 1);
         boardHeightModel = new SpinnerNumberModel(3, 2, 30, 1);
 
-        JPanel boardSizePanel = new JPanel();
+        boardSizePanel = new JPanel();
         GridLayout boardSizePanelLayout = new GridLayout(2, 2);
         boardSizePanelLayout.setHgap(5);
         boardSizePanelLayout.setVgap(5);
@@ -75,16 +108,25 @@ public class MainMenuContentPane extends JPanel {
             // show one AI settings panel
             SwingUtils.setPanelEnabled(aiPlayer1Panel, false);
             SwingUtils.setPanelEnabled(aiPlayer2Panel, true);
+            // change default player names
+            if (player1NameTextField.getText().equals("AI Player 1")) player1NameTextField.setText("Human Player 1");
+            if (player2NameTextField.getText().equals("Human Player 2")) player2NameTextField.setText("AI Player 2");
         });
         modePvPRadioButton.addActionListener(e -> {
             // hide both AI settings panels
             SwingUtils.setPanelEnabled(aiPlayer1Panel, false);
             SwingUtils.setPanelEnabled(aiPlayer2Panel, false);
+            // change default player names
+            if (player1NameTextField.getText().equals("AI Player 1")) player1NameTextField.setText("Human Player 1");
+            if (player2NameTextField.getText().equals("AI Player 2")) player2NameTextField.setText("Human Player 2");
         });
         modeCvCRadioButton.addActionListener(e -> {
             // show both AI settings panels
             SwingUtils.setPanelEnabled(aiPlayer1Panel, true);
             SwingUtils.setPanelEnabled(aiPlayer2Panel, true);
+            // change default player names
+            if (player1NameTextField.getText().equals("Human Player 1")) player1NameTextField.setText("AI Player 1");
+            if (player2NameTextField.getText().equals("Human Player 2")) player2NameTextField.setText("AI Player 2");
         });
 
         ButtonGroup modeGroup = new ButtonGroup();
@@ -100,37 +142,27 @@ public class MainMenuContentPane extends JPanel {
 
         SwingUtils.addSplitPanel(this, constraints, boardSizePanel, modePanel);
 
-        gameStateFileTextField = new JTextField("Click the 'Open' button to choose a file");
-        gameStateFileTextField.setEditable(false);
+        player1NameTextField = new JTextField("Human Player 1");
+        JPanel player1Panel = new JPanel();
+        GridLayout player1PanelLayout = new GridLayout(1, 2);
+        player1PanelLayout.setHgap(5);
+        player1PanelLayout.setVgap(5);
+        player1Panel.setLayout(player1PanelLayout);
+        player1Panel.add(new JLabel("Player name:"));
+        player1Panel.setBorder(SwingUtils.createTitledBorder("Player 1 Settings"));
+        player1Panel.add(player1NameTextField);
 
-        JButton gameStateFileOpenButton = new JButton("Open");
-        gameStateFileOpenButton.addActionListener(e -> {
-            JFileChooser fileChooser = new JFileChooser();
-            int returnVal = fileChooser.showOpenDialog(this);
-            if (returnVal == JFileChooser.APPROVE_OPTION) {
-                gameStateFileName = fileChooser.getSelectedFile().getName();
-                gameStateFileTextField.setText(gameStateFileName);
-            }
-        });
+        player2NameTextField = new JTextField("AI Player 2");
+        JPanel player2Panel = new JPanel();
+        GridLayout player2PanelLayout = new GridLayout(1, 2);
+        player2PanelLayout.setHgap(5);
+        player2PanelLayout.setVgap(5);
+        player2Panel.setLayout(player2PanelLayout);
+        player2Panel.add(new JLabel("Player name:"));
+        player2Panel.setBorder(SwingUtils.createTitledBorder("Player 2 Settings"));
+        player2Panel.add(player2NameTextField);
 
-        JButton gameStateFileCancelButton = new JButton("Cancel");
-        gameStateFileCancelButton.addActionListener(e -> {
-            gameStateFileName = null;
-            gameStateFileTextField.setText("Click the 'Open' button to choose a file");
-        });
-
-        JPanel gameStateFilePanel = new JPanel();
-        gameStateFilePanel.setLayout(new BoxLayout(gameStateFilePanel, BoxLayout.X_AXIS));
-        gameStateFilePanel.add(Box.createRigidArea(new Dimension(5, 0)));
-        gameStateFilePanel.add(gameStateFileTextField);
-        gameStateFilePanel.add(Box.createRigidArea(new Dimension(10, 0)));
-        gameStateFilePanel.add(gameStateFileOpenButton);
-        gameStateFilePanel.add(Box.createRigidArea(new Dimension(5, 0)));
-        gameStateFilePanel.add(gameStateFileCancelButton);
-        gameStateFilePanel.setBorder(SwingUtils.createTitledBorder("Load game state"));
-
-        ++constraints.gridy;
-        add(gameStateFilePanel, constraints);
+        SwingUtils.addSplitPanel(this, constraints, player1Panel, player2Panel);
 
         aiPlayer1DifficultyModel = new SpinnerListModel(aiDifficultyList);
         aiPlayer1DifficultyModel.setValue("Beginner");
@@ -168,10 +200,30 @@ public class MainMenuContentPane extends JPanel {
         add(SwingUtils.createEmptyLabel(new Dimension(50, 10)), constraints);
 
         JButton startButton = new JButton("Start");
-        startButton.addActionListener(e -> Game.startGame(
-                new Board((int) boardWidthModel.getValue(), (int) boardHeightModel.getValue()),
-                new Player(), // TODO: set player 1
-                new Player())); // TODO: set player 2
+        startButton.addActionListener(e -> {
+            Board board = new Board((int) boardWidthModel.getValue(), (int) boardHeightModel.getValue());
+            Player player1, player2;
+
+            if (modePvCRadioButton.isSelected() || modePvPRadioButton.isSelected()) {
+                player1 = new HumanPlayer(player1NameTextField.getText().isEmpty() ?
+                        "Human Player 1" : player1NameTextField.getText(), ColorValue.BLUE);
+            } else {
+                player1 = new AIPlayer(player1NameTextField.getText().isEmpty() ?
+                        "AI Player 1" : player1NameTextField.getText(), ColorValue.BLUE,
+                        (String) aiPlayer1DifficultyModel.getValue(),
+                        (int) aiPlayer1GameTreeDepthModel.getValue());
+            }
+            if (modePvPRadioButton.isSelected()) {
+                player2 = new HumanPlayer(player2NameTextField.getText().isEmpty() ?
+                        "Human Player 2" : player2NameTextField.getText(), ColorValue.RED);
+            } else {
+                player2 = new AIPlayer(player2NameTextField.getText().isEmpty() ?
+                        "AI Player 2" : player2NameTextField.getText(), ColorValue.RED,
+                        (String) aiPlayer2DifficultyModel.getValue(),
+                        (int) aiPlayer2GameTreeDepthModel.getValue());
+            }
+            Game.startGame(board, player1, player2);
+        });
         ++constraints.gridy;
         add(startButton, constraints);
 

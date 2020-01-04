@@ -15,7 +15,7 @@ public class AIPlayer extends Player {
             }
         }
 
-        public Difficulty fromString(String s) {
+        public static Difficulty fromString(String s) {
             switch (s) {
                 case "Beginner": return BEGINNER;
                 case "Advanced": return ADVANCED;
@@ -26,16 +26,20 @@ public class AIPlayer extends Player {
     }
 
     Difficulty difficulty;
-    //Solver solver;
+    int treeDepth;
+    Solver solver;
 
-    public AIPlayer(Difficulty difficulty) {
-        this.difficulty = difficulty;
-        /*
-        switch (difficulty) {
-            case BEGINNER: this.solver = new RandomSolver();
-            case ADVANCED: this.solver = new AlphaBetaSolver();
-            case COMPETITIVE: this.solver = new CompetitiveSolver();
+    public AIPlayer(String name, byte colorValue, String difficulty, int treeDepth) {
+        super(name, colorValue);
+        this.difficulty = Difficulty.fromString(difficulty);
+        this.treeDepth = treeDepth;
+        switch (this.difficulty) {
+            case BEGINNER: this.solver = new RandomSolver(this);
+            case ADVANCED: this.solver = new AlphaBetaSolver(this);
+            case COMPETITIVE: this.solver = new CompetitiveSolver(this);
         }
-        */
     }
+
+    @Override
+    public Edge getNextMove() { return solver.getNextMove(); }
 }

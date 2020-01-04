@@ -80,6 +80,8 @@ public class GameBoardPanel extends JPanel {
         }
     }
 
+    public Edge getLastEdge() { return lastEdge; }
+
     private void initUI() {
         setPreferredSize(new Dimension(
                 bottomRight.x + maxDotRadius + borderThickness,

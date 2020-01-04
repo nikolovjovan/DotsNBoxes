@@ -19,11 +19,12 @@ public class Edge {
         this.horizontal = horizontal;
     }
 
-    public void copy(Edge edge) {
+    public Edge copy(Edge edge) {
         colorValue = edge.colorValue;
         x = edge.x;
         y = edge.y;
         horizontal = edge.horizontal;
+        return this;
     }
 
     public boolean isValid() { return x >= 0 && y >= 0; }

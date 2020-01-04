@@ -55,7 +55,7 @@ public class SwingUtils {
     public static void addSplitPanel(JPanel panel, GridBagConstraints constraints, JPanel leftPanel, JPanel rightPanel) {
         JPanel splitPanel = new JPanel();
         GridLayout splitPanelLayout = new GridLayout(1, 2);
-        splitPanelLayout.setHgap(20);
+        splitPanelLayout.setHgap(15);
         splitPanel.setLayout(splitPanelLayout);
         splitPanel.add(leftPanel);
         splitPanel.add(rightPanel);
