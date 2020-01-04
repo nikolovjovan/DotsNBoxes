@@ -19,6 +19,10 @@ public class Board {
         boxMatrix = new byte[height][width];
     }
 
+    public Board(String gameStateFileName) {
+        // TODO: Implement method
+    }
+
     public int getWidth() { return width; }
     public int getHeight() { return height; }
 
