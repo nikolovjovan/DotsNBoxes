@@ -77,7 +77,7 @@ public class Board {
     public void playerDrawEdge(boolean horizontal, int x, int y) {
         numberOfAvailableMoves--;
         if (numberOfAvailableMoves == 0) setEdgeColorValue(horizontal, x, y, ColorValue.BLACK);
-        else setEdgeColorValue(horizontal, x, y, ColorValue.getDark(Game.getCurrentColorValue()));
+        else setEdgeColorValue(horizontal, x, y, ColorValue.getLight(Game.getCurrentColorValue()));
         if (horizontal) {
             if (y > 0 && isTopEdgeSet(x, y - 1) && isLeftEdgeSet(x, y - 1) && isRightEdgeSet(x, y - 1)) {
                 setBoxColorValue(x, y - 1, Game.getCurrentColorValue());

@@ -21,20 +21,20 @@ public class GameBoardPanel extends JPanel {
 
     static final int maxDotRadius = (int) Math.ceil((double) Math.max(dotDiameter, highlightedDotDiameter) / 2);
 
-    static final Color colorTransparent   = new Color(0, 0, 0, 0);
-    static final Color colorBlue          = new Color(0, 80, 240);
-    static final Color colorRed           = new Color(240, 8, 0);
-    static final Color colorDarkBlue      = new Color(0, 56, 192);
-    static final Color colorDarkRed       = new Color(192, 8, 0);
-    static final Color colorBlack         = new Color(16, 16, 16);
+    static final Color colorTransparent = new Color(0, 0, 0, 0);
+    static final Color colorBlue        = new Color(0, 80, 240);
+    static final Color colorRed         = new Color(240, 8, 0);
+    static final Color colorLightBlue   = new Color(48, 140, 255);
+    static final Color colorLightRed    = new Color(255, 64, 48);
+    static final Color colorBlack       = new Color(16, 16, 16);
 
     static Color valueToColor(byte value) {
         switch (value) {
             case ColorValue.TRANSPARENT:    return colorTransparent;
             case ColorValue.BLUE:           return colorBlue;
             case ColorValue.RED:            return colorRed;
-            case ColorValue.DARK_BLUE:      return colorDarkBlue;
-            case ColorValue.DARK_RED:       return colorDarkRed;
+            case ColorValue.LIGHT_BLUE:     return colorLightBlue;
+            case ColorValue.LIGHT_RED:      return colorLightRed;
             case ColorValue.BLACK:          return colorBlack;
             default:                        return null;
         }
