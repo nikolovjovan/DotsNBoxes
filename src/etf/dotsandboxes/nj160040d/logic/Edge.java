@@ -1,22 +1,26 @@
 package etf.dotsandboxes.nj160040d.logic;
 
+import etf.dotsandboxes.nj160040d.gui.ColorValue;
+
 public class Edge {
 
     byte colorValue;
     int x, y;
     boolean horizontal;
 
-    public Edge() {
-        colorValue = 0;
-        x = y = -1;
-        horizontal = false;
-    }
-
     public Edge(byte colorValue, int x, int y, boolean horizontal) {
         this.colorValue = colorValue;
         this.x = x;
         this.y = y;
         this.horizontal = horizontal;
+    }
+
+    public Edge(int x, int y, boolean horizontal) {
+        this(ColorValue.TRANSPARENT, x, y, horizontal);
+    }
+
+    public Edge() {
+        this((byte) 0, -1, -1, false);
     }
 
     public Edge copy(Edge edge) {

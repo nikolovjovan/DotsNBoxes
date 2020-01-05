@@ -13,6 +13,8 @@ public class MainMenuContentPane extends JPanel {
 
     static String[] aiDifficultyList;
 
+    Game game;
+
     JTextField gameStateFileTextField;
     SpinnerModel boardWidthModel, boardHeightModel;
     JRadioButton modePvCRadioButton, modePvPRadioButton, modeCvCRadioButton;
@@ -29,7 +31,8 @@ public class MainMenuContentPane extends JPanel {
         for (int i = 0; i < difficulties.length; ++i) aiDifficultyList[i] = difficulties[i].toString();
     }
 
-    public MainMenuContentPane() {
+    public MainMenuContentPane(Game game) {
+        this.game = game;
         try {
             initUI();
         } catch (Exception e) {
@@ -83,8 +86,6 @@ public class MainMenuContentPane extends JPanel {
         gameStateFilePanel.add(Box.createRigidArea(new Dimension(5, 0)));
         gameStateFilePanel.add(gameStateFileCancelButton);
         gameStateFilePanel.setBorder(SwingUtils.createTitledBorder("Load Previous Game State"));
-        System.out.println("game state panel size: " + gameStateFilePanel.getPreferredSize().width + "x" +
-                gameStateFilePanel.getPreferredSize().height);
         gameStateFilePanel.setPreferredSize(new Dimension(495, 60));
 
         ++constraints.gridy;
@@ -146,7 +147,7 @@ public class MainMenuContentPane extends JPanel {
         modePanel.setBorder(SwingUtils.createTitledBorder("Mode"));
         modePanel.setPreferredSize(new Dimension(240, 106));
 
-        System.out.println("game panel size: " + SwingUtils.addSplitPanel(this, constraints, boardSizePanel, modePanel));
+        SwingUtils.addSplitPanel(this, constraints, boardSizePanel, modePanel);
 
         playerNameTextField = new JTextField[2];
         String[] defaultPlayerName = new String[] { "Human Player 1", "AI Player 2" };
@@ -187,8 +188,8 @@ public class MainMenuContentPane extends JPanel {
             SwingUtils.setPanelEnabled(aiPlayerPanel[i], aiPlayerPanelEnabled[i]);
         }
 
-        System.out.println("player panel size: " + SwingUtils.addSplitPanel(this, constraints, playerPanel[0], playerPanel[1]));
-        System.out.println("ai panel size: " + SwingUtils.addSplitPanel(this, constraints, aiPlayerPanel[0], aiPlayerPanel[1]));
+        SwingUtils.addSplitPanel(this, constraints, playerPanel[0], playerPanel[1]);
+        SwingUtils.addSplitPanel(this, constraints, aiPlayerPanel[0], aiPlayerPanel[1]);
 
         ++constraints.gridy;
         add(SwingUtils.createEmptyLabel(new Dimension(50, 0)), constraints);
@@ -197,29 +198,29 @@ public class MainMenuContentPane extends JPanel {
         startButton.setFont(new Font("Arial", Font.PLAIN, 40));
         startButton.addActionListener(e -> {
             Board board = gameStateFileName == null ?
-                    new Board((int) boardWidthModel.getValue(), (int) boardHeightModel.getValue()) :
-                    new Board(gameStateFileName);
+                    new Board(game, (int) boardWidthModel.getValue(), (int) boardHeightModel.getValue()) :
+                    new Board(game, gameStateFileName);
             Player player1, player2;
 
             if (modePvCRadioButton.isSelected() || modePvPRadioButton.isSelected()) {
-                player1 = new HumanPlayer(playerNameTextField[0].getText().isEmpty() ?
+                player1 = new HumanPlayer(game, playerNameTextField[0].getText().isEmpty() ?
                         "Human Player 1" : playerNameTextField[0].getText(), ColorValue.BLUE);
             } else {
-                player1 = new AIPlayer(playerNameTextField[0].getText().isEmpty() ?
+                player1 = new AIPlayer(game, playerNameTextField[0].getText().isEmpty() ?
                         "AI Player 1" : playerNameTextField[0].getText(), ColorValue.BLUE,
                         (String) aiPlayerDifficultyModel[0].getValue(),
                         (int) aiPlayerTreeDepthModel[0].getValue());
             }
             if (modePvPRadioButton.isSelected()) {
-                player2 = new HumanPlayer(playerNameTextField[1].getText().isEmpty() ?
+                player2 = new HumanPlayer(game, playerNameTextField[1].getText().isEmpty() ?
                         "Human Player 2" : playerNameTextField[1].getText(), ColorValue.RED);
             } else {
-                player2 = new AIPlayer(playerNameTextField[1].getText().isEmpty() ?
+                player2 = new AIPlayer(game, playerNameTextField[1].getText().isEmpty() ?
                         "AI Player 2" : playerNameTextField[1].getText(), ColorValue.RED,
                         (String) aiPlayerDifficultyModel[1].getValue(),
                         (int) aiPlayerTreeDepthModel[1].getValue());
             }
-            Game.startGame(board, player1, player2);
+            game.startGame(board, player1, player2);
         });
         ++constraints.gridy;
         add(startButton, constraints);

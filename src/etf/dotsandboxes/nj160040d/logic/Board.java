@@ -1,36 +1,53 @@
 package etf.dotsandboxes.nj160040d.logic;
 
 import etf.dotsandboxes.nj160040d.Game;
+import etf.dotsandboxes.nj160040d.gui.ColorValue;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Board {
 
+    Game game;
     int width, height, numberOfAvailableMoves;
-
     byte[][] hEdgeMatrix, vEdgeMatrix, boxMatrix;
+    Edge lastEdge;
 
-    public Board(int width, int height) {
+    public Board(Game game, int width, int height) {
+        this.game = game;
         this.width = width;
         this.height = height;
-        numberOfAvailableMoves = 2 * width * height + width + height;
-        hEdgeMatrix = new byte[height + 1][width];
-        vEdgeMatrix = new byte[height][width + 1];
-        boxMatrix = new byte[height][width];
+        this.numberOfAvailableMoves = 2 * width * height + width + height;
+        this.hEdgeMatrix = new byte[height + 1][width];
+        this.vEdgeMatrix = new byte[height][width + 1];
+        this.boxMatrix = new byte[height][width];
+        this.lastEdge = new Edge();
     }
 
-    public Board(String gameStateFileName) {
+    public Board(Game game, String gameStateFileName) {
+        this.game = game;
         // TODO: Implement method
     }
 
     public int getWidth() { return width; }
     public int getHeight() { return height; }
 
+    public int getMaxScore() {
+        final int maxScore = width * height;
+        return maxScore;
+    }
+
     public int getNumberOfAvailableMoves() { return numberOfAvailableMoves; }
 
     public List<Edge> getAvailableMoves() {
-        // TODO: Implement method
-        return null;
+        ArrayList<Edge> availableMoves = new ArrayList<>();
+        for (int i = 0; i <= height; ++i)
+            for (int j = 0; j < width; ++j)
+                if (hEdgeMatrix[i][j] == 0) availableMoves.add(new Edge(j, i, true));
+        for (int i = 0; i < height; ++i)
+            for (int j = 0; j <= width; ++j)
+                if (vEdgeMatrix[i][j] == 0) availableMoves.add(new Edge(j, i, false));
+        return availableMoves;
     }
 
     public byte getBoxColorValue(int x, int y) { return boxMatrix[y][x]; }
@@ -78,27 +95,56 @@ public class Board {
     public Edge getRightEdge(int x, int y) { return getEdge(false, x + 1, y); }
     public boolean isRightEdgeSet(int x, int y) { return isEdgeSet(false, x + 1, y); }
 
-    public void playerDrawEdge(boolean horizontal, int x, int y) {
+    public boolean closesBox(Edge edge) {
+        int x = edge.getX(), y = edge.getY();
+        if (edge.isHorizontal()) {
+            if (y > 0 && isTopEdgeSet(x, y - 1) && isLeftEdgeSet(x, y - 1) && isRightEdgeSet(x, y - 1)) return true;
+            if (y < height && isBottomEdgeSet(x, y) && isLeftEdgeSet(x, y) && isRightEdgeSet(x, y)) return true;
+        } else {
+            if (x > 0 && isLeftEdgeSet(x - 1, y) && isTopEdgeSet(x - 1, y) && isBottomEdgeSet(x - 1, y)) return true;
+            if (x < width && isRightEdgeSet(x, y) && isTopEdgeSet(x, y) && isBottomEdgeSet(x, y)) return true;
+        }
+        return false;
+    }
+
+    public boolean playerDrawEdge(Edge edge) {
+        if (!edge.isValid()) return false;
+        if (numberOfAvailableMoves == 0) return false;
+        Player player = game.getCurrentPlayer();
+        int x = edge.getX(), y = edge.getY();
+        byte colorValue = player.getColorValue();
+        int score = player.getScore();
+        boolean playsAgain = false;
+        if (lastEdge.isValid()) game.getBoard().setEdgeColorValue(lastEdge, ColorValue.BLACK);
+        lastEdge.copy(edge);
         numberOfAvailableMoves--;
-        if (numberOfAvailableMoves == 0) setEdgeColorValue(horizontal, x, y, ColorValue.BLACK);
-        else setEdgeColorValue(horizontal, x, y, ColorValue.getLight(Game.getCurrentColorValue()));
-        if (horizontal) {
+        if (numberOfAvailableMoves == 0) setEdgeColorValue(edge, ColorValue.BLACK);
+        else setEdgeColorValue(edge, ColorValue.getHighlightColor(colorValue));
+        if (edge.isHorizontal()) {
             if (y > 0 && isTopEdgeSet(x, y - 1) && isLeftEdgeSet(x, y - 1) && isRightEdgeSet(x, y - 1)) {
-                setBoxColorValue(x, y - 1, Game.getCurrentColorValue());
+                setBoxColorValue(x, y - 1, colorValue);
+                score++;
+                playsAgain = true;
             }
             if (y < height && isBottomEdgeSet(x, y) && isLeftEdgeSet(x, y) && isRightEdgeSet(x, y)) {
-                setBoxColorValue(x, y, Game.getCurrentColorValue());
+                setBoxColorValue(x, y, colorValue);
+                score++;
+                playsAgain = true;
             }
         } else {
             if (x > 0 && isLeftEdgeSet(x - 1, y) && isTopEdgeSet(x - 1, y) && isBottomEdgeSet(x - 1, y)) {
-                setBoxColorValue(x - 1, y, Game.getCurrentColorValue());
+                setBoxColorValue(x - 1, y, colorValue);
+                score++;
+                playsAgain = true;
             }
             if (x < width && isRightEdgeSet(x, y) && isTopEdgeSet(x, y) && isBottomEdgeSet(x, y)) {
-                setBoxColorValue(x, y, Game.getCurrentColorValue());
+                setBoxColorValue(x, y, colorValue);
+                score++;
+                playsAgain = true;
             }
         }
-    }
-    public void playerDrawEdge(Edge edge) {
-        playerDrawEdge(edge.isHorizontal(), edge.getX(), edge.getY());
+        player.setScore(score);
+        if (numberOfAvailableMoves == 0) game.endGame();
+        return playsAgain;
     }
 }

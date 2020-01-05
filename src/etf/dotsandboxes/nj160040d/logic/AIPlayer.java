@@ -1,5 +1,7 @@
 package etf.dotsandboxes.nj160040d.logic;
 
+import etf.dotsandboxes.nj160040d.Game;
+
 public class AIPlayer extends Player {
 
     public enum Difficulty {
@@ -29,16 +31,28 @@ public class AIPlayer extends Player {
     int treeDepth;
     Solver solver;
 
-    public AIPlayer(String name, byte colorValue, String difficulty, int treeDepth) {
-        super(name, colorValue);
+    public AIPlayer(Game game, String name, byte colorValue, String difficulty, int treeDepth) {
+        super(game, Type.AI, name, colorValue);
         this.difficulty = Difficulty.fromString(difficulty);
         this.treeDepth = treeDepth;
+        if (this.difficulty == null) throw new RuntimeException("AI Player difficulty: " + difficulty + " is invalid!");
         switch (this.difficulty) {
-            case BEGINNER: this.solver = new RandomSolver(this);
-            case ADVANCED: this.solver = new AlphaBetaSolver(this);
-            case COMPETITIVE: this.solver = new CompetitiveSolver(this);
+            case BEGINNER: {
+                this.solver = new RandomSolver(this);
+                break;
+            }
+            case ADVANCED: {
+                this.solver = new AlphaBetaSolver(this);
+                break;
+            }
+            case COMPETITIVE: {
+                this.solver = new CompetitiveSolver(this);
+                break;
+            }
         }
     }
+
+    public void computeNextMove() { game.playerDone(); }
 
     @Override
     public Edge getNextMove() { return solver.getNextMove(); }

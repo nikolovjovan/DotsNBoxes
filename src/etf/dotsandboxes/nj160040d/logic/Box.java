@@ -5,15 +5,18 @@ public class Box {
     byte colorValue;
     int x, y;
 
-    public Box() {
-        colorValue = -1;
-        x = y = -1;
-    }
-
     public Box(byte colorValue, int x, int y) {
         this.colorValue = colorValue;
         this.x = x;
         this.y = y;
+    }
+
+    public Box(int x, int y) {
+        this((byte) -1, x, y);
+    }
+
+    public Box() {
+        this((byte) -1, -1, -1);
     }
 
     public byte getColorValue() { return colorValue; }

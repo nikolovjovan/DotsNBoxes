@@ -1,10 +1,10 @@
 package etf.dotsandboxes.nj160040d.gui;
 
 import etf.dotsandboxes.nj160040d.Game;
-import etf.dotsandboxes.nj160040d.logic.Board;
 import etf.dotsandboxes.nj160040d.logic.Box;
-import etf.dotsandboxes.nj160040d.logic.ColorValue;
 import etf.dotsandboxes.nj160040d.logic.Edge;
+import etf.dotsandboxes.nj160040d.logic.HumanPlayer;
+import etf.dotsandboxes.nj160040d.logic.Player;
 
 import javax.swing.*;
 import java.awt.*;
@@ -21,43 +21,31 @@ public class GameBoardPanel extends JPanel {
 
     static final int maxDotRadius = (int) Math.ceil((double) Math.max(dotDiameter, highlightedDotDiameter) / 2);
 
-    static final Color colorTransparent = new Color(0, 0, 0, 0);
-    static final Color colorBlue        = new Color(0, 80, 240);
-    static final Color colorRed         = new Color(240, 8, 0);
-    static final Color colorLightBlue   = new Color(48, 140, 255);
-    static final Color colorLightRed    = new Color(255, 64, 48);
-    static final Color colorBlack       = new Color(16, 16, 16);
+    Game game;
 
-    static Color valueToColor(byte value) {
-        switch (value) {
-            case ColorValue.TRANSPARENT:    return colorTransparent;
-            case ColorValue.BLUE:           return colorBlue;
-            case ColorValue.RED:            return colorRed;
-            case ColorValue.LIGHT_BLUE:     return colorLightBlue;
-            case ColorValue.LIGHT_RED:      return colorLightRed;
-            case ColorValue.BLACK:          return colorBlack;
-            default:                        return null;
-        }
-    }
-
-    Board board;
-    int borderThickness, spacing, edgeLength;
+    int borderThickness, width, height, spacing, edgeLength;
+    boolean boardEnabled;
     Point topLeft, bottomRight;
-    Edge lastEdge, highlightedEdge;
+    Edge highlightedEdge;
 
-    public GameBoardPanel(Board board, int borderThickness) {
-        this.board = board;
+    public GameBoardPanel(Game game, int borderThickness) {
+        this.game = game;
         this.borderThickness = borderThickness;
 
-        if (board.getWidth() <= 8 && board.getHeight() <= 4) this.spacing = 96;
-        if (board.getWidth() <= 16 && board.getHeight() <= 8) this.spacing = 72;
-        else if (board.getWidth() <= 24 && board.getHeight() <= 12) this.spacing = 48;
-        else if (board.getWidth() <= 32 && board.getHeight() <= 16) this.spacing = 32;
-        else if (board.getHeight() <= 40 && board.getHeight() <= 20) this.spacing = 20;
-        else if (board.getHeight() <= 48 && board.getHeight() <= 24) this.spacing = 16;
+        this.width = game.getBoard().getWidth();
+        this.height = game.getBoard().getHeight();
+
+        if (this.width <= 8 && this.height <= 4) this.spacing = 96;
+        if (this.width <= 16 && this.height <= 8) this.spacing = 72;
+        else if (this.width <= 24 && this.height <= 12) this.spacing = 48;
+        else if (this.width <= 32 && this.height <= 16) this.spacing = 32;
+        else if (this.width <= 40 && this.height <= 20) this.spacing = 20;
+        else if (this.width <= 48 && this.height <= 24) this.spacing = 16;
         else this.spacing = 12;
 
         this.edgeLength = spacing + dotDiameter;
+
+        this.boardEnabled = game.getCurrentPlayer().getType() == Player.Type.HUMAN;
 
         this.topLeft = new Point(
                 this.borderThickness + maxDotRadius,
@@ -65,13 +53,12 @@ public class GameBoardPanel extends JPanel {
         );
 
         this.bottomRight = new Point(
-                this.topLeft.x + this.edgeLength * this.board.getWidth(),
-                this.topLeft.y + this.edgeLength * this.board.getHeight()
+                this.topLeft.x + this.edgeLength * this.width,
+                this.topLeft.y + this.edgeLength * this.height
         );
 
-        this.lastEdge = new Edge();
         this.highlightedEdge = new Edge();
-        this.highlightedEdge.setColorValue(Game.getCurrentColorValue());
+        this.highlightedEdge.setColorValue(game.getCurrentPlayer().getColorValue());
 
         try {
             initUI();
@@ -80,7 +67,10 @@ public class GameBoardPanel extends JPanel {
         }
     }
 
-    public Edge getLastEdge() { return lastEdge; }
+    public void update() {
+        boardEnabled = game.getCurrentPlayer().getType() == Player.Type.HUMAN;
+        repaint();
+    }
 
     private void initUI() {
         setPreferredSize(new Dimension(
@@ -90,20 +80,19 @@ public class GameBoardPanel extends JPanel {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                if (!boardEnabled) return;
                 if (!highlightedEdge.isValid()) return;
-                if (lastEdge.isValid()) board.setEdgeColorValue(lastEdge, ColorValue.BLACK);
-                board.playerDrawEdge(highlightedEdge);
-                if (board.getNumberOfAvailableMoves() > 0) lastEdge.copy(highlightedEdge);
-                else lastEdge.invalidate();
+                ((HumanPlayer) game.getCurrentPlayer()).setNextMove(highlightedEdge);
                 highlightedEdge.invalidate();
-                Game.nextTurn();
-                highlightedEdge.setColorValue(Game.getCurrentColorValue());
+                highlightedEdge.setColorValue(game.getCurrentPlayer().getColorValue());
                 repaint();
+                game.playerDone();
             }
         });
         addMouseMotionListener(new MouseAdapter() {
             @Override
             public void mouseMoved(MouseEvent e) {
+                if (!boardEnabled) return;
                 if (e.getX() < topLeft.x || e.getX() > bottomRight.x ||
                     e.getY() < topLeft.y || e.getY() > bottomRight.y) {
                     highlightedEdge.invalidate();
@@ -118,7 +107,7 @@ public class GameBoardPanel extends JPanel {
                     else if (y > (edgeLength - x) && y < x) highlightedEdge.setAsRightEdge(boardX, boardY);
                     else highlightedEdge.invalidate();
                 }
-                if (highlightedEdge.isValid() && board.isEdgeSet(highlightedEdge)) highlightedEdge.invalidate();
+                if (highlightedEdge.isValid() && game.getBoard().isEdgeSet(highlightedEdge)) highlightedEdge.invalidate();
                 repaint();
             }
         });
@@ -126,7 +115,7 @@ public class GameBoardPanel extends JPanel {
 
     private void renderBox(Graphics g, Box box) {
         Graphics2D gg = (Graphics2D) g.create();
-        gg.setColor(valueToColor(box.getColorValue()));
+        gg.setColor(ColorValue.valueToColor(box.getColorValue()));
         gg.fillRect(
                 topLeft.x + edgeLength * box.getX(),
                 topLeft.y + edgeLength * box.getY(),
@@ -138,7 +127,7 @@ public class GameBoardPanel extends JPanel {
 
     private void renderEdge(Graphics g, Edge edge, int thickness, boolean dotted) {
         Graphics2D gg = (Graphics2D) g.create();
-        gg.setColor(valueToColor(edge.getColorValue()));
+        gg.setColor(ColorValue.valueToColor(edge.getColorValue()));
         gg.setStroke(new BasicStroke(
                 thickness,
                 BasicStroke.CAP_BUTT,
@@ -161,14 +150,14 @@ public class GameBoardPanel extends JPanel {
         Graphics2D gg = (Graphics2D) g.create();
         gg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         if (renderFlatDot) {
-            gg.setColor(colorBlack);
+            gg.setColor(ColorValue.colorBlack);
             gg.fillOval(dotX, dotY, diameter, diameter);
         } else {
             gg.setColor(Color.DARK_GRAY);
             gg.fillArc(dotX, dotY, diameter, diameter, 45, 180);
             gg.setColor(Color.BLACK);
             gg.fillArc(dotX, dotY, diameter, diameter, 225, 180);
-            gg.setColor(colorBlack);
+            gg.setColor(ColorValue.colorBlack);
             gg.rotate(Math.toRadians(-45), dotX + (double) diameter / 2, dotY + (double) diameter / 2);
             gg.fillOval(dotX, dotY + 1, diameter, diameter - 2);
         }
@@ -179,26 +168,26 @@ public class GameBoardPanel extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        for (int i = 0; i < board.getHeight(); ++i)
-            for (int j = 0; j < board.getWidth(); ++j)
-                if (board.isBoxSet(j, i)) {
-                    renderBox(g, board.getBox(j, i));
+        for (int i = 0; i < height; ++i)
+            for (int j = 0; j < width; ++j)
+                if (game.getBoard().isBoxSet(j, i)) {
+                    renderBox(g, game.getBoard().getBox(j, i));
                 }
 
-        for (int i = 0; i <= board.getHeight(); ++i)
-            for (int j = 0; j < board.getWidth(); ++j)
-                renderEdge(g, board.getEdge(true, j, i ), edgeThickness, false);
+        for (int i = 0; i <= height; ++i)
+            for (int j = 0; j < width; ++j)
+                renderEdge(g, game.getBoard().getEdge(true, j, i ), edgeThickness, false);
 
-        for (int i = 0; i < board.getHeight(); ++i)
-            for (int j = 0; j <= board.getWidth(); ++j)
-                renderEdge(g, board.getEdge(false, j, i), edgeThickness, false);
+        for (int i = 0; i < height; ++i)
+            for (int j = 0; j <= width; ++j)
+                renderEdge(g, game.getBoard().getEdge(false, j, i), edgeThickness, false);
 
         if (highlightedEdge.isValid()) {
             renderEdge(g, highlightedEdge, highlightedEdgeThickness, true);
         }
 
-        for (int i = 0; i <= board.getHeight(); ++i)
-            for (int j = 0; j <= board.getWidth(); ++j)
+        for (int i = 0; i <= height; ++i)
+            for (int j = 0; j <= width; ++j)
                 if (j == highlightedEdge.getX() && i == highlightedEdge.getY() ||
                         highlightedEdge.isHorizontal() && j == highlightedEdge.getX() + 1 && i == highlightedEdge.getY() ||
                         !highlightedEdge.isHorizontal() && j == highlightedEdge.getX() && i == highlightedEdge.getY() + 1) {
