@@ -52,39 +52,41 @@ public class GameContentPane extends JPanel {
         }
     }
 
-    private void showMessage(String message, Color color) {
-        if (message == null) {
-            this.message = null;
-            this.messageColor = ColorValue.colorBlack;
-            scorePanel.setMessage(null);
-            messageLabel.setText(null);
-            return;
-        }
-        this.message = message;
-        this.messageColor = color;
+    private void updateMessageRenderer(String message) {
         if (scorePanel.canRenderMessage(message)) {
             if (!messageOnScorePanel) {
+                messageOnScorePanel = true;
+                messageLabel.setText(" ");
                 headerPanel.remove(messageLabel);
-                headerPanel.setPreferredSize(new Dimension(
-                        headerPanel.getPreferredSize().width,
-                        headerPanel.getPreferredSize().height - messageLabel.getPreferredSize().height));
-                messageLabel.setText(null);
                 revalidate();
                 repaint();
             }
-            scorePanel.setMessageColor(color);
-            scorePanel.setMessage(message);
-            messageOnScorePanel = true;
         } else {
             if (messageOnScorePanel) {
-                headerPanel.add(messageLabel, messageLabelConstraints);
+                messageOnScorePanel = false;
                 scorePanel.setMessage(null);
+                headerPanel.add(messageLabel, messageLabelConstraints);
                 revalidate();
                 repaint();
             }
+        }
+    }
+
+    private void showMessage(String message, Color color) {
+        this.message = message;
+        this.messageColor = color;
+        if (message == null || message.isEmpty()) {
+            scorePanel.setMessage(null);
+            messageLabel.setText(" ");
+            return;
+        }
+        updateMessageRenderer(message);
+        if (messageOnScorePanel) {
+            scorePanel.setMessageColor(color);
+            scorePanel.setMessage(message);
+        } else {
             messageLabel.setForeground(color);
             messageLabel.setText(message);
-            messageOnScorePanel = false;
         }
     }
 
@@ -98,7 +100,7 @@ public class GameContentPane extends JPanel {
         scorePanel.setMessageFont(messageFont);
         SwingUtils.addComponentVertically(headerPanel, scorePanel, constraints);
 
-        SwingUtils.addVerticalSpacer(headerPanel, constraints, 10);
+//        SwingUtils.addVerticalSpacer(headerPanel, constraints, 10);
 
         messageLabel = new JLabel(" ");
         messageLabel.setFont(messageFont);
@@ -111,7 +113,7 @@ public class GameContentPane extends JPanel {
         headerPanel.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                showMessage(message, messageColor);
+                updateMessageRenderer(thinkingMessage);
             }
         });
     }

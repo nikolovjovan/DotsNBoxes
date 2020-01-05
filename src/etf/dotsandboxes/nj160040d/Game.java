@@ -39,7 +39,6 @@ public class Game extends Thread {
             currentPlayer = player1;
             gameFrame.startGame();
             while (!over) {
-                gameFrame.update();
                 playerDone = false;
                 try {
                     if (getCurrentPlayer().getType() == Player.Type.HUMAN) {
@@ -61,19 +60,21 @@ public class Game extends Thread {
                 if (!board.playerDrawEdge(getCurrentPlayer().getNextMove())) {
                     currentPlayer = currentPlayer.equals(player1) ? player2 : player1;
                 }
-                turn++;
-            }
-            if (player1.getScore() + player2.getScore() == board.getMaxScore()) {
-                // game was not interrupted before being completed
-                if (player1.getScore() > player2.getScore()) { // player 1 wins
-                    winner = player1;
-                    loser = player2;
-                } else if (player1.getScore() < player2.getScore()) { // player 2 wins
-                    winner = player2;
-                    loser = player1;
-                } else { // tie
-                    winner = loser = null;
+                if (player1.getScore() + player2.getScore() == board.getMaxScore()) {
+                    // game was not interrupted before being completed
+                    if (player1.getScore() > player2.getScore()) { // player 1 wins
+                        winner = player1;
+                        loser = player2;
+                    } else if (player1.getScore() < player2.getScore()) { // player 2 wins
+                        winner = player2;
+                        loser = player1;
+                    } else { // tie
+                        winner = loser = null;
+                    }
+                } else {
+                    turn++;
                 }
+                gameFrame.update();
             }
             try {
                 while (!showMainMenu) Thread.sleep(60000);

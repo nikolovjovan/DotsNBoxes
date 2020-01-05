@@ -140,8 +140,8 @@ public class MainMenuContentPane extends JPanel {
 
         SwingUtils.addComponentVertically(contentPanel, gameStateFilePanel, constraints);
 
-        boardWidthModel = new SpinnerNumberModel(3, 2, 80, 1);
-        boardHeightModel = new SpinnerNumberModel(3, 2, 30, 1);
+        boardWidthModel = new SpinnerNumberModel(3, 2, 100, 1);
+        boardHeightModel = new SpinnerNumberModel(3, 2, 40, 1);
 
         boardSizePanel = new JPanel();
         GridLayout boardSizePanelLayout = new GridLayout(2, 2);
