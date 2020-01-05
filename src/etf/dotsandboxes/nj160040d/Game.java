@@ -39,6 +39,7 @@ public class Game extends Thread {
             currentPlayer = player1;
             gameFrame.startGame();
             while (!over) {
+                gameFrame.update();
                 playerDone = false;
                 try {
                     if (getCurrentPlayer().getType() == Player.Type.HUMAN) {
@@ -46,9 +47,9 @@ public class Game extends Thread {
                     } else {
                         // This is now being executed on this thread
                         ((AIPlayer) getCurrentPlayer()).computeNextMove();
-                        // We may put the thread to sleep for a few seconds to simulate thinking time...
+                        // We may put the thread to sleep to simulate thinking time...
                         gameFrame.startThinking();
-                        Thread.sleep(1000);
+                        Thread.sleep(500);
                         gameFrame.stopThinking();
                     }
                 } catch (InterruptedException e) {
@@ -61,7 +62,6 @@ public class Game extends Thread {
                     currentPlayer = currentPlayer.equals(player1) ? player2 : player1;
                 }
                 turn++;
-                gameFrame.update();
             }
             if (player1.getScore() + player2.getScore() == board.getMaxScore()) {
                 // game was not interrupted before being completed
@@ -74,7 +74,6 @@ public class Game extends Thread {
                 } else { // tie
                     winner = loser = null;
                 }
-                gameFrame.update();
             }
             try {
                 while (!showMainMenu) Thread.sleep(60000);

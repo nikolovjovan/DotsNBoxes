@@ -1,10 +1,15 @@
 package etf.dotsandboxes.nj160040d.gui;
 
 import etf.dotsandboxes.nj160040d.Game;
+import etf.dotsandboxes.nj160040d.util.SwingUtils;
 
 import javax.swing.*;
+import java.awt.event.*;
 
 public class GameFrame extends JFrame {
+
+    static String iconFileName = "res/icon.png";
+    static int[] iconSizes = { 16, 20, 24, 32, 40, 48, 64, 128, 256, 512, 1024 };
 
     Game game;
     boolean gameInProgress;
@@ -19,19 +24,8 @@ public class GameFrame extends JFrame {
         }
     }
 
-    public void startGame() {
-        clearContentPane();
-        setContentPane(new GameContentPane(game));
-        pack();
-        gameInProgress = true;
-    }
-
-    public void showMainMenu() {
-        clearContentPane();
-        setContentPane(new MainMenuContentPane(game));
-        pack();
-        gameInProgress = false;
-    }
+    public void startGame() { changeContent(true); }
+    public void showMainMenu() { changeContent(false); }
 
     public void startThinking() {
         if (!gameInProgress) return;
@@ -48,18 +42,52 @@ public class GameFrame extends JFrame {
         ((GameContentPane) getContentPane()).update();
     }
 
-    private void clearContentPane() {
+    private void changeContent(boolean gameInProgress) {
+        clearContent();
+        setContent(gameInProgress);
+    }
+
+    private void clearContent() {
         getContentPane().removeAll();
         revalidate();
         repaint();
     }
 
+    private void setContent(boolean gameInProgress) {
+        this.gameInProgress = gameInProgress;
+        boolean wasMaximized = (getExtendedState() & MAXIMIZED_BOTH) != 0;
+        setContentPane(gameInProgress ? new GameContentPane(game) : new MainMenuContentPane(game));
+        if (wasMaximized) {
+            setMinimumSize(getPreferredSize());
+            setExtendedState(MAXIMIZED_BOTH);
+            revalidate();
+            repaint();
+        } else {
+            setLocationRelativeTo(null);
+            pack();
+            setMinimumSize(getSize());
+        }
+    }
+
     private void initUI() {
-        setTitle("Dots & Boxes");
-        setLocationRelativeTo(null);
-        setResizable(false);
+        setTitle("Dots and Boxes");
+        setIconImages(SwingUtils.createIconImages(iconFileName, iconSizes));
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setContentPane(new MainMenuContentPane(game));
-        pack();
+        setContent(false);
+
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                getContentPane().setSize(e.getComponent().getSize());
+            }
+        });
+        addWindowStateListener(new WindowAdapter() {
+            @Override
+            public void windowStateChanged(WindowEvent e) {
+                if ((e.getNewState() & MAXIMIZED_BOTH) != 0) {
+                    getContentPane().setSize(e.getComponent().getSize());
+                }
+            }
+        });
     }
 }

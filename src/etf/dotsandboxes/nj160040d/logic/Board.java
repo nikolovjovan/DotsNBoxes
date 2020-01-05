@@ -119,7 +119,7 @@ public class Board {
         lastEdge.copy(edge);
         numberOfAvailableMoves--;
         if (numberOfAvailableMoves == 0) setEdgeColorValue(edge, ColorValue.BLACK);
-        else setEdgeColorValue(edge, ColorValue.getHighlightColor(colorValue));
+        else setEdgeColorValue(edge, ColorValue.getLastEdgeColor(colorValue));
         if (edge.isHorizontal()) {
             if (y > 0 && isTopEdgeSet(x, y - 1) && isLeftEdgeSet(x, y - 1) && isRightEdgeSet(x, y - 1)) {
                 setBoxColorValue(x, y - 1, colorValue);

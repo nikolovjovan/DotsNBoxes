@@ -19,18 +19,18 @@ public class GameBoardPanel extends JPanel {
 
     static final boolean renderFlatDot = true;
 
-    static final int maxDotRadius = (int) Math.ceil((double) Math.max(dotDiameter, highlightedDotDiameter) / 2);
+    static final int maxDotDiameter = Math.max(dotDiameter, highlightedDotDiameter);
 
     Game game;
 
-    int borderThickness, width, height, spacing, edgeLength;
-    boolean boardEnabled;
+    int width, height, spacing, edgeLength;
+    boolean boardEnabled, cropped;
+    Dimension requiredSize;
     Point topLeft, bottomRight;
     Edge highlightedEdge;
 
-    public GameBoardPanel(Game game, int borderThickness) {
+    public GameBoardPanel(Game game) {
         this.game = game;
-        this.borderThickness = borderThickness;
 
         this.width = game.getBoard().getWidth();
         this.height = game.getBoard().getHeight();
@@ -43,19 +43,8 @@ public class GameBoardPanel extends JPanel {
         else if (this.width <= 48 && this.height <= 24) this.spacing = 16;
         else this.spacing = 12;
 
-        this.edgeLength = spacing + dotDiameter;
-
         this.boardEnabled = game.getCurrentPlayer().getType() == Player.Type.HUMAN;
-
-        this.topLeft = new Point(
-                this.borderThickness + maxDotRadius,
-                this.borderThickness + maxDotRadius
-        );
-
-        this.bottomRight = new Point(
-                this.topLeft.x + this.edgeLength * this.width,
-                this.topLeft.y + this.edgeLength * this.height
-        );
+        this.cropped = false;
 
         this.highlightedEdge = new Edge();
         this.highlightedEdge.setColorValue(game.getCurrentPlayer().getColorValue());
@@ -72,11 +61,25 @@ public class GameBoardPanel extends JPanel {
         repaint();
     }
 
+    private void updateRequiredSize() {
+        edgeLength = spacing + dotDiameter;
+        requiredSize = new Dimension(maxDotDiameter + edgeLength * width, maxDotDiameter + edgeLength * height);
+    }
+
+    private void updateBoardLocation() {
+        topLeft = new Point(
+                (getWidth() - requiredSize.width + maxDotDiameter) / 2,
+                (getHeight() - requiredSize.height + maxDotDiameter) / 2);
+        bottomRight = new Point(
+                (getWidth() + requiredSize.width - maxDotDiameter) / 2,
+                (getHeight() + requiredSize.height - maxDotDiameter) / 2
+        );
+    }
+
     private void initUI() {
-        setPreferredSize(new Dimension(
-                bottomRight.x + maxDotRadius + borderThickness,
-                bottomRight.y + maxDotRadius + borderThickness
-        ));
+        updateRequiredSize();
+        setPreferredSize(requiredSize);
+        updateBoardLocation();
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -108,6 +111,25 @@ public class GameBoardPanel extends JPanel {
                     else highlightedEdge.invalidate();
                 }
                 if (highlightedEdge.isValid() && game.getBoard().isEdgeSet(highlightedEdge)) highlightedEdge.invalidate();
+                repaint();
+            }
+        });
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                cropped = false;
+                int availableSpacingX = ((getWidth() - maxDotDiameter) / width) - dotDiameter,
+                    availableSpacingY = ((getHeight() - maxDotDiameter) / height) - dotDiameter;
+                int availableSpacing = Math.min(availableSpacingX, availableSpacingY);
+                if (availableSpacing != spacing) {
+                    if (availableSpacing > dotDiameter) spacing = availableSpacing;
+                    else {
+                        spacing = dotDiameter;
+                        cropped = true;
+                    }
+                    updateRequiredSize();
+                }
+                updateBoardLocation();
                 repaint();
             }
         });

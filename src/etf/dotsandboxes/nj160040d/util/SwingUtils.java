@@ -4,42 +4,124 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SwingUtils {
 
-    public static Image resizeImage(String inputImagePath, int scaledWidth, int scaledHeight) throws IOException {
-        BufferedImage inputImage = ImageIO.read(new File(inputImagePath));
-        BufferedImage outputImage = new BufferedImage(scaledWidth, scaledHeight, inputImage.getType());
-        Graphics2D g2d = outputImage.createGraphics();
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        g2d.drawImage(inputImage, 0, 0, scaledWidth, scaledHeight, null);
-        g2d.dispose();
-        return outputImage;
+    public static BufferedImage loadImage(String fileName) {
+        try {
+            return ImageIO.read(new File(fileName));
+        } catch (IOException e) {
+            return null;
+        }
     }
 
-    public static Image scaleImage(String inputImagePath, int scaledWidth) throws IOException {
-        File inputFile = new File(inputImagePath);
-        BufferedImage inputImage = ImageIO.read(inputFile);
-        int scaledHeight = (int) (inputImage.getHeight() * (scaledWidth / (double) inputImage.getWidth()));
-        return resizeImage(inputImagePath, scaledWidth, scaledHeight);
+    public static BufferedImage resizeImage(BufferedImage image, int scaledWidth, int scaledHeight, boolean smooth) {
+        if (image == null) return null;
+        BufferedImage output = new BufferedImage(scaledWidth, scaledHeight, image.getType());
+        Graphics2D gg = output.createGraphics();
+        if (!smooth) {
+            gg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            gg.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            gg.drawImage(image, 0, 0, scaledWidth, scaledHeight, null);
+        } else {
+            Image tmp = image.getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH);
+            gg.drawImage(tmp, 0, 0, null);
+        }
+        gg.dispose();
+        return output;
     }
 
-    public static Image scaleImage(String inputImagePath, double percentage) throws IOException {
-        File inputFile = new File(inputImagePath);
-        BufferedImage inputImage = ImageIO.read(inputFile);
-        int scaledWidth = (int) (inputImage.getWidth() * percentage);
-        int scaledHeight = (int) (inputImage.getHeight() * percentage);
-        return resizeImage(inputImagePath, scaledWidth, scaledHeight);
+    public static BufferedImage resizeImageToFit(BufferedImage image, Dimension availableSpace, boolean smooth) {
+        double scale = Math.min(
+                availableSpace.width / (double) image.getWidth(),
+                availableSpace.height / (double) image.getHeight());
+        return resizeImage(image, (int) (image.getWidth() * scale), (int) (image.getHeight() * scale), smooth);
     }
 
-    public static JLabel createEmptyLabel(Dimension d) {
+    public static List<BufferedImage> createIconImages(String iconFileName, int[] iconSizes) {
+        if (iconFileName == null || iconSizes == null || iconSizes.length == 0) return null;
+        BufferedImage sourceImage = loadImage(iconFileName);
+        if (sourceImage == null) return null;
+        ArrayList<BufferedImage> iconImages = new ArrayList<>(iconSizes.length);
+        for (int iconSize : iconSizes) {
+            iconImages.add(resizeImageToFit(sourceImage, new Dimension(iconSize, iconSize), true));
+        }
+        return iconImages;
+    }
+
+    public static GridBagConstraints createConstraints(int inset, boolean resizable) {
+        GridBagConstraints constraints = new GridBagConstraints();
+        if (inset > 0) constraints.insets = new Insets(inset, inset, inset, inset);
+        if (resizable) {
+            constraints.weightx = constraints.weighty = 1;
+            constraints.fill = GridBagConstraints.BOTH;
+            constraints.anchor = GridBagConstraints.CENTER;
+        }
+        constraints.gridx = constraints.gridy = 0;
+        return constraints;
+    }
+
+    public static void addComponentHorizontally(JPanel panel, Component component, GridBagConstraints constraints) {
+        if (constraints == null) {
+            panel.add(component);
+        } else {
+            panel.add(component, constraints);
+            ++constraints.gridx;
+        }
+    }
+
+    public static void addComponentHorizontally(JPanel panel, Component component) { addComponentHorizontally(panel, component, null); }
+
+    public static void addComponentVertically(JPanel panel, Component component, GridBagConstraints constraints) {
+        if (constraints == null) {
+            panel.add(component);
+        } else {
+            panel.add(component, constraints);
+            ++constraints.gridy;
+        }
+    }
+
+    public static void addComponentVertically(JPanel panel, Component component) { addComponentVertically(panel, component, null); }
+
+    public static void addHorizontalSpacer(JPanel panel, GridBagConstraints constraints, int width) {
+        if (width < 0) return;
         JLabel label = new JLabel();
-        label.setPreferredSize(d);
-        return label;
+        label.setPreferredSize(new Dimension(width, 5));
+        addComponentHorizontally(panel, label, constraints);
+    }
+
+    public static void addVerticalSpacer(JPanel panel, GridBagConstraints constraints, int height) {
+        if (height < 0) return;
+        JLabel label = new JLabel();
+        label.setPreferredSize(new Dimension(5, height));
+        addComponentVertically(panel, label, constraints);
+    }
+
+    public static void addSplitPanel(JPanel panel, GridBagConstraints constraints, JPanel leftPanel, JPanel rightPanel) {
+        JPanel splitPanel = new JPanel();
+        GridLayout splitPanelLayout = new GridLayout(1, 2);
+        splitPanelLayout.setHgap(15);
+        splitPanel.setLayout(splitPanelLayout);
+        addComponentVertically(splitPanel, leftPanel);
+        addComponentVertically(splitPanel, rightPanel);
+        addComponentVertically(panel, splitPanel, constraints);
+    }
+
+    public static void setPanelEnabled(JPanel panel, Boolean isEnabled) {
+        panel.setEnabled(isEnabled);
+        for (Component c : panel.getComponents()) {
+            if (JPanel.class.isAssignableFrom(c.getClass())) {
+                setPanelEnabled((JPanel) c, isEnabled);
+            } else {
+                c.setEnabled(isEnabled);
+            }
+        }
     }
 
     public static Border createTitledBorder(String title, int padding) {
@@ -52,25 +134,22 @@ public class SwingUtils {
         return createTitledBorder(title, 5);
     }
 
-    public static void addSplitPanel(JPanel panel, GridBagConstraints constraints, JPanel leftPanel, JPanel rightPanel) {
-        JPanel splitPanel = new JPanel();
-        GridLayout splitPanelLayout = new GridLayout(1, 2);
-        splitPanelLayout.setHgap(15);
-        splitPanel.setLayout(splitPanelLayout);
-        splitPanel.add(leftPanel);
-        splitPanel.add(rightPanel);
-        ++constraints.gridy;
-        panel.add(splitPanel, constraints);
+    public static Dimension getTextSize(JLabel label, String text, Font font) {
+        if (label == null) return getTextSize(text, font);
+        label.setText(text);
+        label.setFont(font);
+        return label.getPreferredSize();
     }
 
-    public static void setPanelEnabled(JPanel panel, Boolean isEnabled) {
-        panel.setEnabled(isEnabled);
-        for (Component c : panel.getComponents()) {
-            if (JPanel.class.isAssignableFrom(c.getClass())) {
-                setPanelEnabled((JPanel) c, isEnabled);
-            } else {
-                c.setEnabled(isEnabled);
-            }
-        }
+    public static Dimension getTextSize(String text, Font font) {
+        return getTextSize(new JLabel(), text, font);
+    }
+
+    public static Dimension getTextSize(Graphics g, String text) {
+        Graphics2D gg = (Graphics2D) g.create();
+        FontMetrics fm = gg.getFontMetrics();
+        Rectangle2D rect = fm.getStringBounds(text, gg);
+        gg.dispose();
+        return new Dimension((int) Math.ceil(rect.getWidth()), (int) Math.ceil(rect.getHeight()));
     }
 }
