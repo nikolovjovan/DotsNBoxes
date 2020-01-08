@@ -56,14 +56,14 @@ public class ScorePanel extends JPanel {
     public void update() { repaint(); }
 
     public boolean canRenderMessage(String message) {
-        if (message == null || message.length() == 0) return false;
+        if (message == null || message.length() == 0) return true;
         Dimension messageSize = SwingUtils.getTextSize(message, messageFont);
         int availableWidth = getWidth() - 2 * (nameTextBoxWidth + scoreTextBoxWidth + 2 * rectSpacing);
         return messageSize.width <= availableWidth && messageSize.height <= textBoxHeight;
     }
 
     public String getMessage() { return message; }
-    public void setMessage(String message) { this.message = message; }
+    public void setMessage(String message) { this.message = message; repaint(); }
 
     public Color getMessageColor() { return messageColor; }
     public void setMessageColor(Color messageColor) { this.messageColor = messageColor; }

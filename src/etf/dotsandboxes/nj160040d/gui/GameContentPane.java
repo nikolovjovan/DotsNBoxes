@@ -11,6 +11,8 @@ import java.awt.event.ComponentEvent;
 public class GameContentPane extends JPanel {
 
     static final String thinkingMessage = "Thinking...";
+    static final String tieMessage = "It was a tie!";
+    static final String gameInterruptedMessage = "Game was interrupted!";
     static final Font messageFont = new Font("Arial", Font.BOLD, 32);
 
     Game game;
@@ -19,11 +21,11 @@ public class GameContentPane extends JPanel {
     ScorePanel scorePanel;
     GameBoardPanel gameBoardPanel;
     JLabel messageLabel;
+    GridBagConstraints messageLabelConstraints;
+
     String message;
     Color messageColor;
     boolean messageOnScorePanel;
-
-    GridBagConstraints messageLabelConstraints;
 
     public GameContentPane(Game game) {
         this.game = game;
@@ -45,9 +47,9 @@ public class GameContentPane extends JPanel {
                 showMessage(game.getWinner().getName() + " Won!",
                         ColorValue.valueToColor(ColorValue.getLastEdgeColor(game.getWinner().getColorValue())));
             } else if (game.getPlayer1().getScore() == game.getPlayer2().getScore()) {
-                showMessage("It is a tie!", ColorValue.colorBlack);
+                showMessage(tieMessage, ColorValue.colorBlack);
             } else {
-                showMessage("Game was interrupted!", ColorValue.colorBlack);
+                showMessage(gameInterruptedMessage, ColorValue.colorBlack);
             }
         }
     }
@@ -75,12 +77,12 @@ public class GameContentPane extends JPanel {
     private void showMessage(String message, Color color) {
         this.message = message;
         this.messageColor = color;
+        updateMessageRenderer(message);
         if (message == null || message.isEmpty()) {
             scorePanel.setMessage(null);
             messageLabel.setText(" ");
             return;
         }
-        updateMessageRenderer(message);
         if (messageOnScorePanel) {
             scorePanel.setMessageColor(color);
             scorePanel.setMessage(message);
@@ -100,8 +102,6 @@ public class GameContentPane extends JPanel {
         scorePanel.setMessageFont(messageFont);
         SwingUtils.addComponentVertically(headerPanel, scorePanel, constraints);
 
-//        SwingUtils.addVerticalSpacer(headerPanel, constraints, 10);
-
         messageLabel = new JLabel(" ");
         messageLabel.setFont(messageFont);
         messageLabel.setForeground(ColorValue.colorBlack);
@@ -113,7 +113,7 @@ public class GameContentPane extends JPanel {
         headerPanel.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                updateMessageRenderer(thinkingMessage);
+                showMessage(message, messageColor);
             }
         });
     }
@@ -131,16 +131,6 @@ public class GameContentPane extends JPanel {
 
         constraints.weighty = 0;
         SwingUtils.addVerticalSpacer(contentPanel, constraints, 10);
-
-        JPanel endButtonPanel = new JPanel(new GridBagLayout());
-        GridBagConstraints endButtonPanelConstraints = SwingUtils.createConstraints(5, false);
-        JButton endButton = new JButton("End Game");
-        endButton.setFont(new Font("Arial", Font.PLAIN, 40));
-        endButton.addActionListener(e -> game.showMainMenu());
-        SwingUtils.addComponentVertically(endButtonPanel, endButton, endButtonPanelConstraints);
-
-        constraints.weighty = 0;
-        SwingUtils.addComponentVertically(contentPanel, endButtonPanel, constraints);
     }
 
     private void initFooter() {
@@ -149,7 +139,20 @@ public class GameContentPane extends JPanel {
         constraints.anchor = GridBagConstraints.CENTER;
 
         constraints.weighty = 0;
-        SwingUtils.addVerticalSpacer(contentPanel, constraints, 10);
+        SwingUtils.addVerticalSpacer(footerPanel, constraints, 10);
+
+        JPanel endButtonPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints endButtonPanelConstraints = SwingUtils.createConstraints(5, false);
+        JButton endButton = new JButton("End Game");
+        endButton.setFont(new Font("Arial", Font.PLAIN, 40));
+        endButton.addActionListener(e -> game.showMainMenu());
+        SwingUtils.addComponentVertically(endButtonPanel, endButton, endButtonPanelConstraints);
+
+        constraints.weighty = 1;
+        SwingUtils.addComponentVertically(footerPanel, endButtonPanel, constraints);
+
+        constraints.weighty = 0;
+        SwingUtils.addVerticalSpacer(footerPanel, constraints, 10);
 
         JLabel copyrightLabel = new JLabel("January 2020 - Jovan Nikolov 2016/0040");
         copyrightLabel.setFont(new Font("Arial", Font.PLAIN, 12));
