@@ -8,8 +8,8 @@ import java.awt.event.*;
 
 public class GameFrame extends JFrame {
 
-    static String iconFileName = "res/icon.png";
-    static int[] iconSizes = { 16, 20, 24, 32, 40, 48, 64, 128, 256, 512, 1024 };
+    private static final String iconFileName = "res/icon.png";
+    private static final int[] iconSizes = { 16, 20, 24, 32, 40, 48, 64, 128, 256, 512, 1024 };
 
     private Game game;
     private boolean gameInProgress;

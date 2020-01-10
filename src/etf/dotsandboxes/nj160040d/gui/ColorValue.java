@@ -17,14 +17,14 @@ public class ColorValue {
 
     public static byte getLastEdgeColor(byte colorValue) { return (byte) (colorValue | DARK_FLAG); }
 
-    static final Color colorTransparent = new Color(0, 0, 0, 0);
-    static final Color colorBlue        = new Color(48, 140, 255);
-    static final Color colorRed         = new Color(255, 64, 48);
-    static final Color colorDarkBlue    = new Color(0, 80, 240);
-    static final Color colorDarkRed     = new Color(240, 8, 0);
-    static final Color colorBlack       = new Color(16, 16, 16);
+    public static final Color colorTransparent = new Color(0, 0, 0, 0);
+    public static final Color colorBlue        = new Color(48, 140, 255);
+    public static final Color colorRed         = new Color(255, 64, 48);
+    public static final Color colorDarkBlue    = new Color(0, 80, 240);
+    public static final Color colorDarkRed     = new Color(240, 8, 0);
+    public static final Color colorBlack       = new Color(16, 16, 16);
 
-    static Color valueToColor(byte value) {
+    public static Color valueToColor(byte value) {
         switch (value) {
             case ColorValue.TRANSPARENT:    return colorTransparent;
             case ColorValue.BLUE:           return colorBlue;

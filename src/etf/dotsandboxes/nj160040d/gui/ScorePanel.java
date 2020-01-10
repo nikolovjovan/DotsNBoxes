@@ -10,42 +10,45 @@ import java.awt.event.ComponentEvent;
 
 public class ScorePanel extends JPanel {
 
-    static Font scorePanelFont = new Font("Arial", Font.BOLD, 24);
-    static int textHeightCompensation = 6; // stupid text rendering and text height...
+    private static final int maxPlayerNameLength = 25;
 
-    static int scoreSliderHeight = 20;
-    static int scoreSliderArcDiameter = scoreSliderHeight;
-    static int scoreSliderStrokeThickness = 1;
+    private static final Font scorePanelFont = new Font("Arial", Font.BOLD, 24);
+    private static final int textHeightCompensation = 6; // stupid text rendering and text height...
 
-    static int textBoxHeight = ceilToTens(SwingUtils.getTextSize("WQXO", scorePanelFont).height + 20);
-    static int textBoxArcDiameter = textBoxHeight / 4;
-    static int textBoxStrokeThickness = 1;
+    private static final int scoreSliderHeight = 20;
+    private static final int scoreSliderArcDiameter = scoreSliderHeight;
+    private static final int scoreSliderStrokeThickness = 1;
 
-    static int rectSpacing = 10;
-    static int lineThickness = 4;
-    static int lineArcDiameter = lineThickness;
+    private static final int textBoxHeight = ceilToTens(SwingUtils.getTextSize("WQXO", scorePanelFont).height + 20);
+    private static final int textBoxArcDiameter = textBoxHeight / 4;
+    private static final int textBoxStrokeThickness = 1;
 
-    static int scoreTextBoxWidth = ceilToTens(SwingUtils.getTextSize("9999", scorePanelFont).width + 20);
+    private static final int rectSpacing = 10;
+    private static final int lineThickness = 4;
+    private static final int lineArcDiameter = lineThickness;
 
     private State state;
 
     private String message, player1Name, player2Name;
     private Color messageColor, player1Color, player2Color;
     private Font messageFont;
-    private int nameTextBoxWidth;
+    private int nameTextBoxWidth, scoreTextBoxWidth;
 
     public ScorePanel(State state) {
         this.state = state;
         this.player1Name = state.getPlayer1().getName();
         this.player2Name = state.getPlayer2().getName();
-        if (this.player1Name.length() > 20) this.player1Name = this.player1Name.substring(0, 17) + "...";
-        if (this.player2Name.length() > 20) this.player2Name = this.player2Name.substring(0, 17) + "...";
+        if (this.player1Name.length() > maxPlayerNameLength) this.player1Name = this.player1Name.substring(0, maxPlayerNameLength - 3) + "...";
+        if (this.player2Name.length() > maxPlayerNameLength) this.player2Name = this.player2Name.substring(0, maxPlayerNameLength - 3) + "...";
         this.messageColor = ColorValue.colorBlack;
         this.player1Color = ColorValue.valueToColor(state.getPlayer1().getColorValue());
         this.player2Color = ColorValue.valueToColor(state.getPlayer2().getColorValue());
         this.messageFont = scorePanelFont;
-        this.nameTextBoxWidth = ceilToTens(SwingUtils.getTextSize(player1Name, scorePanelFont).width + 20);
-
+        this.nameTextBoxWidth = ceilToTens(Math.max(
+                        SwingUtils.getTextSize(this.player1Name, scorePanelFont).width,
+                        SwingUtils.getTextSize(this.player2Name, scorePanelFont).width) + 20);
+        this.scoreTextBoxWidth = ceilToTens(
+                SwingUtils.getTextSize(String.valueOf(state.getMaxScore()), scorePanelFont).width + 20);
         try {
             initUI();
         } catch (Exception e) {
@@ -137,6 +140,7 @@ public class ScorePanel extends JPanel {
     }
 
     private void renderCenteredText(Graphics g, int x, String text, Color textColor, Font textFont) {
+        if (text == null) return;
         Graphics2D gg = (Graphics2D) g.create();
         gg.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         gg.setColor(textColor);

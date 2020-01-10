@@ -9,21 +9,25 @@ import java.awt.EventQueue;
 
 public class Game implements Runnable {
 
+    public enum Mode { PvC, PvP, CvC_STEP, CvC_QUICK }
+
+    private static final long moveTime = 500000000; // 500 ms
+
     private Thread thread;
     private GameFrame gameFrame;
     private State state;
-    private boolean started, playerDone, over, showMainMenu;
+    private Mode mode;
+    private boolean started, playerDone, nextStep, over, showMainMenu;
 
     public Game() {
         this.thread = new Thread(this);
         this.gameFrame = new GameFrame(this);
-        this.started = false;
-        this.playerDone = false;
-        this.over = false;
-        this.showMainMenu = false;
+        this.started = this.playerDone = this.over = this.showMainMenu = false;
     }
 
     public State getState() { return state; }
+
+    public Mode getMode() { return mode; }
 
     public boolean isOver() { return over; }
 
@@ -32,8 +36,9 @@ public class Game implements Runnable {
         thread.start();
     }
 
-    public void startGame(State state) {
+    public void startGame(State state, Mode mode) {
         this.state = state;
+        this.mode = mode;
         started = true;
         if (!Thread.currentThread().equals(thread)) thread.interrupt();
     }
@@ -43,13 +48,18 @@ public class Game implements Runnable {
         if (!Thread.currentThread().equals(thread)) thread.interrupt();
     }
 
+    public void nextStep() {
+        nextStep = true;
+        if (!Thread.currentThread().equals(thread)) thread.interrupt();
+    }
+
     public void endGame() {
         over = true;
         if (!Thread.currentThread().equals(thread)) thread.interrupt();
     }
 
     public void showMainMenu() {
-        showMainMenu = over = playerDone = true;
+        showMainMenu = over = nextStep = playerDone = true;
         if (!Thread.currentThread().equals(thread)) thread.interrupt();
     }
 
@@ -67,19 +77,35 @@ public class Game implements Runnable {
             }
             gameFrame.startGame();
             while (!over) {
+                if (mode == Mode.CvC_STEP) {
+                    nextStep = false;
+                    try {
+                        while (!nextStep) Thread.sleep(60000);
+                    } catch (InterruptedException e) {
+                        if (over) break;
+                        if (!nextStep) {
+                            System.out.println("Error! Next step not activated but thread is interrupted!");
+                            return;
+                        }
+                    }
+                }
                 playerDone = false;
                 try {
                     if (state.getCurrentPlayer().getType() == Player.Type.HUMAN) {
                         while (!playerDone) Thread.sleep(60000);
                     } else {
-                        // This is now being executed on this thread
-                        ((AIPlayer) state.getCurrentPlayer()).computeNextMove();
-                        // We may put the thread to sleep to simulate thinking time...
                         gameFrame.startThinking();
-                        Thread.sleep(500);
+                        long computeTime = ((AIPlayer) state.getCurrentPlayer()).computeNextMove();
+                        if (mode == Mode.PvC || mode == Mode.PvP) {
+                            if (computeTime < moveTime) {
+                                long timeLeft = moveTime - computeTime;
+                                Thread.sleep(timeLeft / 1000000, (int) (timeLeft % 1000000));
+                            }
+                        }
                         gameFrame.stopThinking();
                     }
                 } catch (InterruptedException e) {
+                    if (over) break;
                     if (!playerDone) {
                         System.out.println("Error! Player not done but thread is interrupted!");
                         return;

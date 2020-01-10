@@ -12,14 +12,14 @@ import java.awt.event.*;
 
 public class GameBoardPanel extends JPanel {
 
-    static final int dotDiameter                = 10;
-    static final int edgeThickness              = 4;
-    static final int highlightedDotDiameter     = 12;
-    static final int highlightedEdgeThickness   = 2;
+    private static final int dotDiameter                = 10;
+    private static final int edgeThickness              = 4;
+    private static final int highlightedDotDiameter     = 12;
+    private static final int highlightedEdgeThickness   = 2;
 
-    static final boolean renderFlatDot = true;
+    private static final boolean renderFlatDot = true;
 
-    static final int maxDotDiameter = Math.max(dotDiameter, highlightedDotDiameter);
+    private static final int maxDotDiameter = Math.max(dotDiameter, highlightedDotDiameter);
 
     private Game game;
 

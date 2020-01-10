@@ -53,8 +53,11 @@ public class AIPlayer extends Player {
 
     public int getMaxDepth() { return maxDepth; }
 
-    public void computeNextMove() {
+    public long computeNextMove() {
+        long startTime = System.nanoTime();
         nextMove = solver.getNextMove();
+        long endTime = System.nanoTime() - startTime;
         game.playerDone();
+        return endTime;
     }
 }

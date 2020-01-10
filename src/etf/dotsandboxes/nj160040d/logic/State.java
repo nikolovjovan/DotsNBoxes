@@ -166,26 +166,15 @@ public class State implements Cloneable {
         return count;
     }
 
-    public boolean closesBox(Edge edge) {
-        int x = edge.getX(), y = edge.getY();
-        if (edge.isHorizontal()) {
-            if (y > 0 && isTopEdgeSet(x, y - 1) && isLeftEdgeSet(x, y - 1) && isRightEdgeSet(x, y - 1)) return true;
-            if (y < height && isBottomEdgeSet(x, y) && isLeftEdgeSet(x, y) && isRightEdgeSet(x, y)) return true;
+    public boolean addsNthEdge(Edge move, int n) {
+        if (n < 1 || n > 4) return true;
+        int x = move.getX(), y = move.getY();
+        if (move.isHorizontal()) {
+            if (y > 0 && getEdgeCount(x, y - 1) == n - 1) return true;
+            if (y < height && getEdgeCount(x, y) == n - 1) return true;
         } else {
-            if (x > 0 && isLeftEdgeSet(x - 1, y) && isTopEdgeSet(x - 1, y) && isBottomEdgeSet(x - 1, y)) return true;
-            if (x < width && isRightEdgeSet(x, y) && isTopEdgeSet(x, y) && isBottomEdgeSet(x, y)) return true;
-        }
-        return false;
-    }
-
-    public boolean addsThirdEdge(Edge edge) {
-        int x = edge.getX(), y = edge.getY();
-        if (edge.isHorizontal()) {
-            if (y > 0 && getEdgeCount(x, y - 1) == 2) return true;
-            if (y < height && getEdgeCount(x, y) == 2) return true;
-        } else {
-            if (x > 0 && getEdgeCount(x - 1, y) == 2) return true;
-            if (x < width && getEdgeCount(x, y) == 2) return true;
+            if (x > 0 && getEdgeCount(x - 1, y) == n - 1) return true;
+            if (x < width && getEdgeCount(x, y) == n - 1) return true;
         }
         return false;
     }

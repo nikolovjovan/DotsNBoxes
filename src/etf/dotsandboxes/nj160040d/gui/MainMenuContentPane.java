@@ -6,18 +6,22 @@ import etf.dotsandboxes.nj160040d.util.SwingUtils;
 
 import javax.swing.*;
 import javax.swing.Box;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
 
 public class MainMenuContentPane extends JPanel {
 
-    static String[] aiDifficultyList;
-    static String logoFileName = "res/title.png";
-    static String titleText = "Dots & Boxes";
-    static String titleFontName = "Comic Sans MS";
-    static int titleFontSize = 60;
+    private static final byte[] playerColors = { ColorValue.BLUE, ColorValue.RED };
+    private static final String[] aiDifficulties;
+
+    private static final String logoFileName = "res/title.png";
+    private static final String titleText = "Dots & Boxes";
+    private static final String titleFontName = "Comic Sans MS";
+    private static final int titleFontSize = 60;
 
     private Game game;
 
@@ -26,7 +30,8 @@ public class MainMenuContentPane extends JPanel {
     private BufferedImage logo;
     private JTextField gameStateFileTextField;
     private SpinnerModel boardWidthModel, boardHeightModel;
-    private JRadioButton modePvCRadioButton, modePvPRadioButton;
+    private JPanel speedPanel;
+    private JRadioButton modePvCRadioButton, modePvPRadioButton, modeCvCRadioButton, speedStep;
     private JTextField[] playerNameTextField;
     private SpinnerModel[] aiPlayerDifficultyModel, aiPlayerTreeDepthModel;
     private JPanel boardSizePanel;
@@ -36,8 +41,8 @@ public class MainMenuContentPane extends JPanel {
 
     static {
         AIPlayer.Difficulty[] difficulties = AIPlayer.Difficulty.values();
-        aiDifficultyList = new String[difficulties.length];
-        for (int i = 0; i < difficulties.length; ++i) aiDifficultyList[i] = difficulties[i].toString();
+        aiDifficulties = new String[difficulties.length];
+        for (int i = 0; i < difficulties.length; ++i) aiDifficulties[i] = difficulties[i].toString();
     }
 
     public MainMenuContentPane(Game game) {
@@ -48,6 +53,52 @@ public class MainMenuContentPane extends JPanel {
             e.printStackTrace();
         }
     }
+
+    private boolean isPlayerAI(int playerIndex) {
+        if (playerIndex < 0 || playerIndex > 1) return false;
+        return playerIndex == 0 && modeCvCRadioButton.isSelected() ||
+                playerIndex == 1 && (modePvCRadioButton.isSelected() || modeCvCRadioButton.isSelected());
+    }
+
+    private String getDefaultPlayerName(int playerIndex) {
+        if (playerIndex < 0 || playerIndex > 1) return null;
+        String name = isPlayerAI(playerIndex) ? aiPlayerDifficultyModel[playerIndex].getValue() + " AI" : "Human";
+        return name + " Player " + (playerIndex + 1);
+    }
+
+    private String getPlayerName(int playerIndex) {
+        if (playerIndex < 0 || playerIndex > 1) return null;
+        return playerNameTextField[playerIndex].getText().isEmpty() ?
+                getDefaultPlayerName(playerIndex) :
+                playerNameTextField[playerIndex].getText();
+    }
+
+    private void updatePlayerName(int playerIndex) {
+        if (playerIndex < 0 || playerIndex > 1) return;
+        String playerName = playerNameTextField[playerIndex].getText();
+        boolean isDefault = false;
+        if (playerName.equals("Human Player " + (playerIndex + 1))) isDefault = true;
+        if (!isDefault)
+            for (String aiDifficulty : aiDifficulties)
+                if (playerName.equals(aiDifficulty + " AI Player " + (playerIndex + 1))) {
+                    isDefault = true;
+                    break;
+                }
+        if (isDefault && !playerName.equals(getDefaultPlayerName(playerIndex)))
+            playerNameTextField[playerIndex].setText(getDefaultPlayerName(playerIndex));
+    }
+
+    private ActionListener modeRadioButtonActionListener = e -> {
+        for (int i = 0; i < 2; ++i) {
+            SwingUtils.setPanelEnabled(aiPlayerPanel[i], isPlayerAI(i));
+            SwingUtils.setPanelEnabled(speedPanel, modeCvCRadioButton.isSelected());
+            updatePlayerName(i);
+        }
+    };
+
+    private ChangeListener playerDifficultySpinnerChangeListener = e -> {
+        for (int i = 0; i < 2; ++i) updatePlayerName(i);
+    };
 
     private void initHeader() {
         headerPanel = new JPanel(new GridBagLayout());
@@ -129,60 +180,38 @@ public class MainMenuContentPane extends JPanel {
 
         JPanel gameStateFilePanel = new JPanel();
         gameStateFilePanel.setLayout(new BoxLayout(gameStateFilePanel, BoxLayout.X_AXIS));
-        SwingUtils.addComponentVertically(gameStateFilePanel, Box.createRigidArea(new Dimension(5, 0)));
-        SwingUtils.addComponentVertically(gameStateFilePanel, gameStateFileTextField);
-        SwingUtils.addComponentVertically(gameStateFilePanel, Box.createRigidArea(new Dimension(10, 0)));
-        SwingUtils.addComponentVertically(gameStateFilePanel, gameStateFileOpenButton);
-        SwingUtils.addComponentVertically(gameStateFilePanel, Box.createRigidArea(new Dimension(5, 0)));
-        SwingUtils.addComponentVertically(gameStateFilePanel, gameStateFileCancelButton);
+        gameStateFilePanel.add(Box.createRigidArea(new Dimension(5, 0)));
+        gameStateFilePanel.add(gameStateFileTextField);
+        gameStateFilePanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        gameStateFilePanel.add(gameStateFileOpenButton);
+        gameStateFilePanel.add(Box.createRigidArea(new Dimension(5, 0)));
+        gameStateFilePanel.add(gameStateFileCancelButton);
         gameStateFilePanel.setBorder(SwingUtils.createTitledBorder("Load Previous Game State"));
-        gameStateFilePanel.setPreferredSize(new Dimension(495, 60));
+        gameStateFilePanel.setPreferredSize(new Dimension(615, 60));
 
         SwingUtils.addComponentVertically(contentPanel, gameStateFilePanel, constraints);
 
-        boardWidthModel = new SpinnerNumberModel(3, 2, 100, 1);
-        boardHeightModel = new SpinnerNumberModel(3, 2, 40, 1);
+        boardWidthModel = new SpinnerNumberModel(3, 2, 90, 1);
+        boardHeightModel = new SpinnerNumberModel(3, 2, 35, 1);
 
         boardSizePanel = new JPanel();
         GridLayout boardSizePanelLayout = new GridLayout(2, 2);
         boardSizePanelLayout.setHgap(5);
         boardSizePanelLayout.setVgap(5);
         boardSizePanel.setLayout(boardSizePanelLayout);
-        SwingUtils.addComponentVertically(boardSizePanel, new JLabel("Board width:"));
-        SwingUtils.addComponentVertically(boardSizePanel, new JSpinner(boardWidthModel));
-        SwingUtils.addComponentVertically(boardSizePanel, new JLabel("Board height:"));
-        SwingUtils.addComponentVertically(boardSizePanel, new JSpinner(boardHeightModel));
+        boardSizePanel.add(new JLabel("Board width:"));
+        boardSizePanel.add(new JSpinner(boardWidthModel));
+        boardSizePanel.add(new JLabel("Board height:"));
+        boardSizePanel.add(new JSpinner(boardHeightModel));
         boardSizePanel.setBorder(SwingUtils.createTitledBorder("Board size"));
-        boardSizePanel.setPreferredSize(new Dimension(240, 106));
+        boardSizePanel.setPreferredSize(new Dimension(300, 106));
 
         modePvCRadioButton = new JRadioButton("Player vs AI", true);
+        modePvCRadioButton.addActionListener(modeRadioButtonActionListener);
         modePvPRadioButton = new JRadioButton("Player vs Player");
-        JRadioButton modeCvCRadioButton = new JRadioButton("AI vs AI");
-
-        modePvCRadioButton.addActionListener(e -> {
-            // show one AI settings panel
-            SwingUtils.setPanelEnabled(aiPlayerPanel[0], false);
-            SwingUtils.setPanelEnabled(aiPlayerPanel[1], true);
-            // change default player names
-            if (playerNameTextField[0].getText().equals("AI Player 1")) playerNameTextField[0].setText("Human Player 1");
-            if (playerNameTextField[1].getText().equals("Human Player 2")) playerNameTextField[1].setText("AI Player 2");
-        });
-        modePvPRadioButton.addActionListener(e -> {
-            // hide both AI settings panels
-            SwingUtils.setPanelEnabled(aiPlayerPanel[0], false);
-            SwingUtils.setPanelEnabled(aiPlayerPanel[1], false);
-            // change default player names
-            if (playerNameTextField[0].getText().equals("AI Player 1")) playerNameTextField[0].setText("Human Player 1");
-            if (playerNameTextField[1].getText().equals("AI Player 2")) playerNameTextField[1].setText("Human Player 2");
-        });
-        modeCvCRadioButton.addActionListener(e -> {
-            // show both AI settings panels
-            SwingUtils.setPanelEnabled(aiPlayerPanel[0], true);
-            SwingUtils.setPanelEnabled(aiPlayerPanel[1], true);
-            // change default player names
-            if (playerNameTextField[0].getText().equals("Human Player 1")) playerNameTextField[0].setText("AI Player 1");
-            if (playerNameTextField[1].getText().equals("Human Player 2")) playerNameTextField[1].setText("AI Player 2");
-        });
+        modePvPRadioButton.addActionListener(modeRadioButtonActionListener);
+        modeCvCRadioButton = new JRadioButton("AI vs AI");
+        modeCvCRadioButton.addActionListener(modeRadioButtonActionListener);
 
         ButtonGroup modeGroup = new ButtonGroup();
         modeGroup.add(modePvCRadioButton);
@@ -190,51 +219,67 @@ public class MainMenuContentPane extends JPanel {
         modeGroup.add(modeCvCRadioButton);
 
         JPanel modePanel = new JPanel(new GridLayout(3, 1));
-        SwingUtils.addComponentVertically(modePanel, modePvCRadioButton);
-        SwingUtils.addComponentVertically(modePanel, modePvPRadioButton);
-        SwingUtils.addComponentVertically(modePanel, modeCvCRadioButton);
-        modePanel.setBorder(SwingUtils.createTitledBorder("Mode"));
-        modePanel.setPreferredSize(new Dimension(240, 106));
+        modePanel.add(modePvCRadioButton);
+        modePanel.add(modePvPRadioButton);
+        modePanel.add(modeCvCRadioButton);
 
-        SwingUtils.addSplitPanel(contentPanel, constraints, boardSizePanel, modePanel);
+        speedStep = new JRadioButton("Step by step", true);
+        JRadioButton speedQuick = new JRadioButton("Quick (no delay)");
+
+        ButtonGroup gameSpeedGroup = new ButtonGroup();
+        gameSpeedGroup.add(speedStep);
+        gameSpeedGroup.add(speedQuick);
+
+        speedPanel = new JPanel(new GridLayout(2, 1));
+        speedPanel.add(speedStep);
+        speedPanel.add(speedQuick);
+        SwingUtils.setPanelEnabled(speedPanel, modeCvCRadioButton.isSelected());
+
+        JPanel gameModePanel = new JPanel(new GridLayout(1, 2));
+        gameModePanel.add(modePanel);
+        gameModePanel.add(speedPanel);
+        gameModePanel.setBorder(SwingUtils.createTitledBorder("Game Mode"));
+        gameModePanel.setPreferredSize(new Dimension(300, 106));
+
+        SwingUtils.addSplitPanel(contentPanel, constraints, boardSizePanel, gameModePanel);
 
         playerNameTextField = new JTextField[2];
-        String[] defaultPlayerName = new String[] { "Human Player 1", "AI Player 2" };
         JPanel[] playerPanel = new JPanel[2];
-        GridLayout[] playerPanelLayout = new GridLayout[2];
 
         aiPlayerDifficultyModel = new SpinnerModel[2];
         aiPlayerTreeDepthModel = new SpinnerModel[2];
         aiPlayerPanel = new JPanel[2];
-        boolean[] aiPlayerPanelEnabled = new boolean[] { false, true };
-        GridLayout[] aiPlayerPanelLayout = new GridLayout[2];
 
         for (int i = 0; i < 2; ++i) {
-            playerNameTextField[i] = new JTextField(defaultPlayerName[i]);
+            playerNameTextField[i] = new JTextField();
             playerPanel[i] = new JPanel();
-            playerPanelLayout[i] = new GridLayout(1, 2);
-            playerPanelLayout[i].setHgap(5);
-            playerPanelLayout[i].setVgap(5);
-            playerPanel[i].setLayout(playerPanelLayout[i]);
-            SwingUtils.addComponentVertically(playerPanel[i], new JLabel("Player name:"));
-            SwingUtils.addComponentVertically(playerPanel[i], playerNameTextField[i]);
+            GridLayout playerPanelLayout = new GridLayout(1, 2);
+            playerPanelLayout.setHgap(5);
+            playerPanelLayout.setVgap(5);
+            playerPanel[i].setLayout(playerPanelLayout);
+            playerPanel[i].add(new JLabel("Player name:"));
+            playerPanel[i].add(playerNameTextField[i]);
             playerPanel[i].setBorder(SwingUtils.createTitledBorder("Player " + (i + 1) + " Settings"));
-            playerPanel[i].setPreferredSize(new Dimension(240, 54));
+            playerPanel[i].setPreferredSize(new Dimension(300, 54));
 
-            aiPlayerDifficultyModel[i] = new SpinnerListModel(aiDifficultyList);
+            aiPlayerDifficultyModel[i] = new SpinnerListModel(aiDifficulties);
             aiPlayerTreeDepthModel[i] = new SpinnerNumberModel(1, 0, 10, 1);
             aiPlayerPanel[i] = new JPanel();
-            aiPlayerPanelLayout[i] = new GridLayout(2, 2);
-            aiPlayerPanelLayout[i].setHgap(5);
-            aiPlayerPanelLayout[i].setVgap(5);
-            aiPlayerPanel[i].setLayout(aiPlayerPanelLayout[i]);
-            SwingUtils.addComponentVertically(aiPlayerPanel[i], new JLabel("Difficulty:"));
-            SwingUtils.addComponentVertically(aiPlayerPanel[i], new JSpinner(aiPlayerDifficultyModel[i]));
-            SwingUtils.addComponentVertically(aiPlayerPanel[i], new JLabel("Game tree depth:"));
-            SwingUtils.addComponentVertically(aiPlayerPanel[i], new JSpinner(aiPlayerTreeDepthModel[i]));
+            GridLayout aiPlayerPanelLayout = new GridLayout(2, 2);
+            aiPlayerPanelLayout.setHgap(5);
+            aiPlayerPanelLayout.setVgap(5);
+            aiPlayerPanel[i].setLayout(aiPlayerPanelLayout);
+            JSpinner aiPlayerDifficultySpinner = new JSpinner(aiPlayerDifficultyModel[i]);
+            aiPlayerDifficultySpinner.addChangeListener(playerDifficultySpinnerChangeListener);
+            aiPlayerPanel[i].add(new JLabel("Difficulty:"));
+            aiPlayerPanel[i].add(new JSpinner(aiPlayerDifficultyModel[i]));
+            aiPlayerPanel[i].add(new JLabel("Game tree depth:"));
+            aiPlayerPanel[i].add(new JSpinner(aiPlayerTreeDepthModel[i]));
             aiPlayerPanel[i].setBorder(SwingUtils.createTitledBorder("AI Player " + (i + 1) + " Settings"));
-            aiPlayerPanel[i].setPreferredSize(new Dimension(240, 79));
-            SwingUtils.setPanelEnabled(aiPlayerPanel[i], aiPlayerPanelEnabled[i]);
+            aiPlayerPanel[i].setPreferredSize(new Dimension(300, 79));
+
+            playerNameTextField[i].setText(getDefaultPlayerName(i));
+            SwingUtils.setPanelEnabled(aiPlayerPanel[i], isPlayerAI(i));
         }
 
         SwingUtils.addSplitPanel(contentPanel, constraints, playerPanel[0], playerPanel[1]);
@@ -253,29 +298,21 @@ public class MainMenuContentPane extends JPanel {
         JButton startButton = new JButton("Start");
         startButton.setFont(new Font("Arial", Font.PLAIN, 40));
         startButton.addActionListener(e -> {
-            Player player1, player2;
-            if (modePvCRadioButton.isSelected() || modePvPRadioButton.isSelected()) {
-                player1 = new HumanPlayer(game, playerNameTextField[0].getText().isEmpty() ?
-                        "Human Player 1" : playerNameTextField[0].getText(), ColorValue.BLUE);
-            } else {
-                player1 = new AIPlayer(game, playerNameTextField[0].getText().isEmpty() ?
-                        "AI Player 1" : playerNameTextField[0].getText(), ColorValue.BLUE,
-                        (String) aiPlayerDifficultyModel[0].getValue(),
-                        (int) aiPlayerTreeDepthModel[0].getValue());
-            }
-            if (modePvPRadioButton.isSelected()) {
-                player2 = new HumanPlayer(game, playerNameTextField[1].getText().isEmpty() ?
-                        "Human Player 2" : playerNameTextField[1].getText(), ColorValue.RED);
-            } else {
-                player2 = new AIPlayer(game, playerNameTextField[1].getText().isEmpty() ?
-                        "AI Player 2" : playerNameTextField[1].getText(), ColorValue.RED,
-                        (String) aiPlayerDifficultyModel[1].getValue(),
-                        (int) aiPlayerTreeDepthModel[1].getValue());
+            Player[] players = new Player[2];
+            for (int i = 0; i < 2; ++i) {
+                if (isPlayerAI(i)) players[i] = new AIPlayer(game, getPlayerName(i), playerColors[i],
+                        (String) aiPlayerDifficultyModel[i].getValue(), (int) aiPlayerTreeDepthModel[i].getValue());
+                else players[i] = new HumanPlayer(game, getPlayerName(i), playerColors[i]);
             }
             State state = gameStateFileName == null ?
-                    new State(game, player1, player2, (int) boardWidthModel.getValue(), (int) boardHeightModel.getValue()) :
-                    new State(game, player1, player2, gameStateFileName);
-            game.startGame(state);
+                    new State(game, players[0], players[1], (int) boardWidthModel.getValue(), (int) boardHeightModel.getValue()) :
+                    new State(game, players[0], players[1], gameStateFileName);
+            Game.Mode mode;
+            if (modePvCRadioButton.isSelected()) mode = Game.Mode.PvC;
+            else if (modePvPRadioButton.isSelected()) mode = Game.Mode.PvP;
+            else if (speedStep.isSelected()) mode = Game.Mode.CvC_STEP;
+            else mode = Game.Mode.CvC_QUICK;
+            game.startGame(state, mode);
         });
         SwingUtils.addComponentVertically(startButtonPanel, startButton, startButtonPanelConstraints);
 

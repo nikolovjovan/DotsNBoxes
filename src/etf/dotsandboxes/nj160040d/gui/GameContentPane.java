@@ -10,10 +10,10 @@ import java.awt.event.ComponentEvent;
 
 public class GameContentPane extends JPanel {
 
-    static final String thinkingMessage = "Thinking...";
-    static final String tieMessage = "It was a tie!";
-    static final String gameInterruptedMessage = "Game was interrupted!";
-    static final Font messageFont = new Font("Arial", Font.BOLD, 32);
+    private static final String thinkingMessage = "Thinking...";
+    private static final String tieMessage = "It was a tie!";
+    private static final String gameInterruptedMessage = "Game was interrupted!";
+    private static final Font messageFont = new Font("Arial", Font.BOLD, 32);
 
     private Game game;
 
@@ -143,10 +143,16 @@ public class GameContentPane extends JPanel {
 
         JPanel endButtonPanel = new JPanel(new GridBagLayout());
         GridBagConstraints endButtonPanelConstraints = SwingUtils.createConstraints(5, false);
+        if (game.getMode() == Game.Mode.CvC_STEP) {
+            JButton nextStepButton = new JButton("Next Step");
+            nextStepButton.setFont(new Font("Arial", Font.PLAIN, 40));
+            nextStepButton.addActionListener(e -> game.nextStep());
+            SwingUtils.addComponentHorizontally(endButtonPanel, nextStepButton, endButtonPanelConstraints);
+        }
         JButton endButton = new JButton("End Game");
         endButton.setFont(new Font("Arial", Font.PLAIN, 40));
         endButton.addActionListener(e -> game.showMainMenu());
-        SwingUtils.addComponentVertically(endButtonPanel, endButton, endButtonPanelConstraints);
+        SwingUtils.addComponentHorizontally(endButtonPanel, endButton, endButtonPanelConstraints);
 
         constraints.weighty = 1;
         SwingUtils.addComponentVertically(footerPanel, endButtonPanel, constraints);

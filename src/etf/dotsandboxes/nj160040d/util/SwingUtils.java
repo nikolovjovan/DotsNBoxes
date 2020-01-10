@@ -76,8 +76,6 @@ public class SwingUtils {
         }
     }
 
-    public static void addComponentHorizontally(JPanel panel, Component component) { addComponentHorizontally(panel, component, null); }
-
     public static void addComponentVertically(JPanel panel, Component component, GridBagConstraints constraints) {
         if (constraints == null) {
             panel.add(component);
@@ -86,8 +84,6 @@ public class SwingUtils {
             ++constraints.gridy;
         }
     }
-
-    public static void addComponentVertically(JPanel panel, Component component) { addComponentVertically(panel, component, null); }
 
     public static void addHorizontalSpacer(JPanel panel, GridBagConstraints constraints, int width) {
         if (width < 0) return;
@@ -108,8 +104,8 @@ public class SwingUtils {
         GridLayout splitPanelLayout = new GridLayout(1, 2);
         splitPanelLayout.setHgap(15);
         splitPanel.setLayout(splitPanelLayout);
-        addComponentVertically(splitPanel, leftPanel);
-        addComponentVertically(splitPanel, rightPanel);
+        splitPanel.add(leftPanel);
+        splitPanel.add(rightPanel);
         addComponentVertically(panel, splitPanel, constraints);
     }
 
@@ -146,6 +142,7 @@ public class SwingUtils {
     }
 
     public static Dimension getTextSize(Graphics g, String text) {
+        if (text == null) return null;
         Graphics2D gg = (Graphics2D) g.create();
         FontMetrics fm = gg.getFontMetrics();
         Rectangle2D rect = fm.getStringBounds(text, gg);
