@@ -4,8 +4,8 @@ import etf.dotsandboxes.nj160040d.Game;
 
 public class CompetitiveSolver implements Solver {
 
-    Game game;
-    AIPlayer player;
+    private Game game;
+    private AIPlayer player;
 
     public CompetitiveSolver(AIPlayer player) {
         this.player = player;
@@ -14,8 +14,8 @@ public class CompetitiveSolver implements Solver {
 
     @Override
     public Edge getNextMove() {
-        if (game.getBoard().numberOfAvailableMoves == 0) return new Edge();
+        if (game.getState().getNumberOfAvailableMoves() == 0) return new Edge();
         // TODO: Remove this placeholder and implement the method
-        return game.getBoard().getAvailableMoves().get(0);
+        return game.getState().getAvailableMoves().get(0);
     }
 }

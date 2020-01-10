@@ -10,26 +10,18 @@ public abstract class Player implements Solver {
     protected Type type;
     protected String name;
     protected byte colorValue;
-    protected int score;
+    protected Edge nextMove;
 
     protected Player(Game game, Type type, String name, byte colorValue) {
         this.game = game;
         this.type = type;
         this.name = name;
         this.colorValue = colorValue;
-        this.score = 0;
+        this.nextMove = new Edge();
     }
 
     public Type getType() { return type; }
-
     public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-
     public byte getColorValue() { return colorValue; }
-    public void setColorValue(byte colorValue) { this.colorValue = colorValue; }
-
-    public int getScore() { return score; }
-    public void setScore(int score) { this.score = score; }
-
-    public abstract Edge getNextMove();
+    public Edge getNextMove() { return nextMove; }
 }

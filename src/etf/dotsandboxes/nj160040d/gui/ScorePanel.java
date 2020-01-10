@@ -1,6 +1,6 @@
 package etf.dotsandboxes.nj160040d.gui;
 
-import etf.dotsandboxes.nj160040d.Game;
+import etf.dotsandboxes.nj160040d.logic.State;
 import etf.dotsandboxes.nj160040d.util.SwingUtils;
 
 import javax.swing.*;
@@ -27,22 +27,22 @@ public class ScorePanel extends JPanel {
 
     static int scoreTextBoxWidth = ceilToTens(SwingUtils.getTextSize("9999", scorePanelFont).width + 20);
 
-    Game game;
+    private State state;
 
-    String message, player1Name, player2Name;
-    Color messageColor, player1Color, player2Color;
-    Font messageFont;
-    int nameTextBoxWidth;
+    private String message, player1Name, player2Name;
+    private Color messageColor, player1Color, player2Color;
+    private Font messageFont;
+    private int nameTextBoxWidth;
 
-    public ScorePanel(Game game) {
-        this.game = game;
-        this.player1Name = game.getPlayer1().getName();
-        this.player2Name = game.getPlayer2().getName();
+    public ScorePanel(State state) {
+        this.state = state;
+        this.player1Name = state.getPlayer1().getName();
+        this.player2Name = state.getPlayer2().getName();
         if (this.player1Name.length() > 20) this.player1Name = this.player1Name.substring(0, 17) + "...";
         if (this.player2Name.length() > 20) this.player2Name = this.player2Name.substring(0, 17) + "...";
         this.messageColor = ColorValue.colorBlack;
-        this.player1Color = ColorValue.valueToColor(game.getPlayer1().getColorValue());
-        this.player2Color = ColorValue.valueToColor(game.getPlayer2().getColorValue());
+        this.player1Color = ColorValue.valueToColor(state.getPlayer1().getColorValue());
+        this.player2Color = ColorValue.valueToColor(state.getPlayer2().getColorValue());
         this.messageFont = scorePanelFont;
         this.nameTextBoxWidth = ceilToTens(SwingUtils.getTextSize(player1Name, scorePanelFont).width + 20);
 
@@ -62,13 +62,8 @@ public class ScorePanel extends JPanel {
         return messageSize.width <= availableWidth && messageSize.height <= textBoxHeight;
     }
 
-    public String getMessage() { return message; }
     public void setMessage(String message) { this.message = message; repaint(); }
-
-    public Color getMessageColor() { return messageColor; }
     public void setMessageColor(Color messageColor) { this.messageColor = messageColor; }
-
-    public Font getMessageFont() { return messageFont; }
     public void setMessageFont(Font messageFont) { this.messageFont = messageFont; }
 
     private void initUI() {
@@ -117,8 +112,8 @@ public class ScorePanel extends JPanel {
             innerArcDiameter = scoreSliderArcDiameter - 2 * scoreSliderStrokeThickness,
             innerRectX = scoreSliderArcDiameter / 2,
             innerRectWidth = getWidth() - scoreSliderArcDiameter,
-            player1RectWidth = (int) Math.ceil(innerRectWidth * game.getPlayer1().getScore() / (double) game.getBoard().getMaxScore()),
-            player2RectWidth = (int) Math.ceil(innerRectWidth * game.getPlayer2().getScore() / (double) game.getBoard().getMaxScore());
+            player1RectWidth = (int) Math.ceil(innerRectWidth * state.getPlayer1Score() / (double) state.getMaxScore()),
+            player2RectWidth = (int) Math.ceil(innerRectWidth * state.getPlayer2Score() / (double) state.getMaxScore());
         renderRect(g, 0, 0, getWidth(), scoreSliderHeight, scoreSliderArcDiameter, scoreSliderStrokeThickness, Color.DARK_GRAY);
         if (player1RectWidth > 0) {
             if (player1RectWidth == innerRectWidth) {
@@ -176,7 +171,7 @@ public class ScorePanel extends JPanel {
 
         renderTextBox(g, 0, nameTextBoxWidth, player1Color, player1Name, Color.WHITE);
         renderTextBox(g, nameTextBoxWidth + rectSpacing, scoreTextBoxWidth, Color.WHITE,
-                String.valueOf(game.getPlayer1().getScore()), player1Color);
+                String.valueOf(state.getPlayer1Score()), player1Color);
 
         if (message != null && canRenderMessage(message)) {
             renderCenteredText(g, getWidth() / 2, message, messageColor, messageFont);
@@ -185,9 +180,9 @@ public class ScorePanel extends JPanel {
         renderTextBox(g, getWidth() - nameTextBoxWidth, nameTextBoxWidth, player2Color,
                 player2Name, Color.WHITE);
         renderTextBox(g, getWidth() - nameTextBoxWidth - rectSpacing - scoreTextBoxWidth,
-                scoreTextBoxWidth, Color.WHITE,  String.valueOf(game.getPlayer2().getScore()), player2Color);
+                scoreTextBoxWidth, Color.WHITE,  String.valueOf(state.getPlayer2Score()), player2Color);
 
-        if (game.getCurrentPlayer().equals(game.getPlayer1())) {
+        if (state.getCurrentPlayer().equals(state.getPlayer1())) {
             renderLine(g, 0, player1Color);
         } else {
             renderLine(g, getWidth() - nameTextBoxWidth, player2Color);

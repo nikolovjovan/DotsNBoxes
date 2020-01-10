@@ -11,8 +11,8 @@ public class GameFrame extends JFrame {
     static String iconFileName = "res/icon.png";
     static int[] iconSizes = { 16, 20, 24, 32, 40, 48, 64, 128, 256, 512, 1024 };
 
-    Game game;
-    boolean gameInProgress;
+    private Game game;
+    private boolean gameInProgress;
 
     public GameFrame(Game game) {
         this.game = game;

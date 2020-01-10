@@ -19,20 +19,20 @@ public class MainMenuContentPane extends JPanel {
     static String titleFontName = "Comic Sans MS";
     static int titleFontSize = 60;
 
-    Game game;
+    private Game game;
 
-    JPanel headerPanel, contentPanel, footerPanel;
+    private JPanel headerPanel, contentPanel, footerPanel;
 
-    BufferedImage logo;
-    JTextField gameStateFileTextField;
-    SpinnerModel boardWidthModel, boardHeightModel;
-    JRadioButton modePvCRadioButton, modePvPRadioButton, modeCvCRadioButton;
-    JTextField[] playerNameTextField;
-    SpinnerModel[] aiPlayerDifficultyModel, aiPlayerTreeDepthModel;
-    JPanel boardSizePanel;
-    JPanel[] aiPlayerPanel;
+    private BufferedImage logo;
+    private JTextField gameStateFileTextField;
+    private SpinnerModel boardWidthModel, boardHeightModel;
+    private JRadioButton modePvCRadioButton, modePvPRadioButton;
+    private JTextField[] playerNameTextField;
+    private SpinnerModel[] aiPlayerDifficultyModel, aiPlayerTreeDepthModel;
+    private JPanel boardSizePanel;
+    private JPanel[] aiPlayerPanel;
 
-    String gameStateFileName;
+    private String gameStateFileName;
 
     static {
         AIPlayer.Difficulty[] difficulties = AIPlayer.Difficulty.values();
@@ -157,7 +157,7 @@ public class MainMenuContentPane extends JPanel {
 
         modePvCRadioButton = new JRadioButton("Player vs AI", true);
         modePvPRadioButton = new JRadioButton("Player vs Player");
-        modeCvCRadioButton = new JRadioButton("AI vs AI");
+        JRadioButton modeCvCRadioButton = new JRadioButton("AI vs AI");
 
         modePvCRadioButton.addActionListener(e -> {
             // show one AI settings panel
@@ -253,11 +253,7 @@ public class MainMenuContentPane extends JPanel {
         JButton startButton = new JButton("Start");
         startButton.setFont(new Font("Arial", Font.PLAIN, 40));
         startButton.addActionListener(e -> {
-            Board board = gameStateFileName == null ?
-                    new Board(game, (int) boardWidthModel.getValue(), (int) boardHeightModel.getValue()) :
-                    new Board(game, gameStateFileName);
             Player player1, player2;
-
             if (modePvCRadioButton.isSelected() || modePvPRadioButton.isSelected()) {
                 player1 = new HumanPlayer(game, playerNameTextField[0].getText().isEmpty() ?
                         "Human Player 1" : playerNameTextField[0].getText(), ColorValue.BLUE);
@@ -276,7 +272,10 @@ public class MainMenuContentPane extends JPanel {
                         (String) aiPlayerDifficultyModel[1].getValue(),
                         (int) aiPlayerTreeDepthModel[1].getValue());
             }
-            game.startGame(board, player1, player2);
+            State state = gameStateFileName == null ?
+                    new State(game, player1, player2, (int) boardWidthModel.getValue(), (int) boardHeightModel.getValue()) :
+                    new State(game, player1, player2, gameStateFileName);
+            game.startGame(state);
         });
         SwingUtils.addComponentVertically(startButtonPanel, startButton, startButtonPanelConstraints);
 

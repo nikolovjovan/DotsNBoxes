@@ -2,26 +2,55 @@ package etf.dotsandboxes.nj160040d;
 
 import etf.dotsandboxes.nj160040d.gui.GameFrame;
 import etf.dotsandboxes.nj160040d.logic.AIPlayer;
-import etf.dotsandboxes.nj160040d.logic.Board;
 import etf.dotsandboxes.nj160040d.logic.Player;
+import etf.dotsandboxes.nj160040d.logic.State;
 
 import java.awt.EventQueue;
 
-public class Game extends Thread {
+public class Game implements Runnable {
 
+    private Thread thread;
     private GameFrame gameFrame;
-    private Board board;
-    private Player player1, player2, currentPlayer, winner, loser;
+    private State state;
     private boolean started, playerDone, over, showMainMenu;
-    private int turn;
 
     public Game() {
+        this.thread = new Thread(this);
         this.gameFrame = new GameFrame(this);
         this.started = false;
         this.playerDone = false;
         this.over = false;
         this.showMainMenu = false;
-        this.turn = 0;
+    }
+
+    public State getState() { return state; }
+
+    public boolean isOver() { return over; }
+
+    public void startThread() {
+        if (thread.getState() != Thread.State.NEW) return;
+        thread.start();
+    }
+
+    public void startGame(State state) {
+        this.state = state;
+        started = true;
+        if (!Thread.currentThread().equals(thread)) thread.interrupt();
+    }
+
+    public void playerDone() {
+        playerDone = true;
+        if (!Thread.currentThread().equals(thread)) thread.interrupt();
+    }
+
+    public void endGame() {
+        over = true;
+        if (!Thread.currentThread().equals(thread)) thread.interrupt();
+    }
+
+    public void showMainMenu() {
+        showMainMenu = over = playerDone = true;
+        if (!Thread.currentThread().equals(thread)) thread.interrupt();
     }
 
     @Override
@@ -36,16 +65,15 @@ public class Game extends Thread {
                     return;
                 }
             }
-            currentPlayer = player1;
             gameFrame.startGame();
             while (!over) {
                 playerDone = false;
                 try {
-                    if (getCurrentPlayer().getType() == Player.Type.HUMAN) {
+                    if (state.getCurrentPlayer().getType() == Player.Type.HUMAN) {
                         while (!playerDone) Thread.sleep(60000);
                     } else {
                         // This is now being executed on this thread
-                        ((AIPlayer) getCurrentPlayer()).computeNextMove();
+                        ((AIPlayer) state.getCurrentPlayer()).computeNextMove();
                         // We may put the thread to sleep to simulate thinking time...
                         gameFrame.startThinking();
                         Thread.sleep(500);
@@ -57,23 +85,7 @@ public class Game extends Thread {
                         return;
                     }
                 }
-                if (!board.playerDrawEdge(getCurrentPlayer().getNextMove())) {
-                    currentPlayer = currentPlayer.equals(player1) ? player2 : player1;
-                }
-                if (player1.getScore() + player2.getScore() == board.getMaxScore()) {
-                    // game was not interrupted before being completed
-                    if (player1.getScore() > player2.getScore()) { // player 1 wins
-                        winner = player1;
-                        loser = player2;
-                    } else if (player1.getScore() < player2.getScore()) { // player 2 wins
-                        winner = player2;
-                        loser = player1;
-                    } else { // tie
-                        winner = loser = null;
-                    }
-                } else {
-                    turn++;
-                }
+                state.playerDrawEdge(state.getCurrentPlayer().getNextMove());
                 gameFrame.update();
             }
             try {
@@ -91,47 +103,10 @@ public class Game extends Thread {
         }
     }
 
-    public Board getBoard() { return board; }
-
-    public Player getPlayer1() { return player1; }
-    public Player getPlayer2() { return player2; }
-
-    public Player getCurrentPlayer() { return currentPlayer; }
-    public Player getWinner() { return winner; }
-    public Player getLoser() { return loser; }
-
-    public boolean isStarted() { return started; }
-    public boolean isOver() { return over; }
-
-    public int getTurn() { return turn; }
-
-    public void startGame(Board board, Player player1, Player player2) {
-        this.board = board;
-        this.player1 = player1;
-        this.player2 = player2;
-        started = true;
-        if (!Thread.currentThread().equals(this)) interrupt();
-    }
-
-    public void playerDone() {
-        playerDone = true;
-        if (!Thread.currentThread().equals(this)) interrupt();
-    }
-
-    public void endGame() {
-        over = true;
-        if (!Thread.currentThread().equals(this)) interrupt();
-    }
-
-    public void showMainMenu() {
-        showMainMenu = over = playerDone = true;
-        if (!Thread.currentThread().equals(this)) interrupt();
-    }
-
     public static void main(String[] args) {
         EventQueue.invokeLater(() -> {
             try {
-                new Game().start();
+                new Game().startThread();
             } catch (Exception e) {
                 e.printStackTrace();
             }

@@ -6,38 +6,92 @@ import etf.dotsandboxes.nj160040d.gui.ColorValue;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Board {
+public class State implements Cloneable {
 
-    Game game;
-    int width, height, numberOfAvailableMoves;
-    byte[][] hEdgeMatrix, vEdgeMatrix, boxMatrix;
-    Edge lastEdge;
+    private Game game;
+    private Player player1, player2;
+    private int width, height;
 
-    public Board(Game game, int width, int height) {
+    private byte[][] hEdgeMatrix, vEdgeMatrix, boxMatrix;
+
+    private boolean canModifyGame;
+    private int numberOfAvailableMoves, score1, score2, maxScore;
+    private Edge lastEdge;
+    private Player currentPlayer, winner, loser;
+
+    public State(Game game, Player player1, Player player2, int width, int height) {
         this.game = game;
+        this.player1 = player1;
+        this.player2 = player2;
         this.width = width;
         this.height = height;
-        this.numberOfAvailableMoves = 2 * width * height + width + height;
-        this.hEdgeMatrix = new byte[height + 1][width];
-        this.vEdgeMatrix = new byte[height][width + 1];
-        this.boxMatrix = new byte[height][width];
+        this.canModifyGame = true;
+        if (width > 0 && height > 0) {
+            this.hEdgeMatrix = new byte[height + 1][width];
+            this.vEdgeMatrix = new byte[height][width + 1];
+            this.boxMatrix = new byte[height][width];
+            this.numberOfAvailableMoves = 2 * width * height + width + height;
+        }
+        this.score1 = this.score2 = 0;
+        this.maxScore = this.width * this.height;
         this.lastEdge = new Edge();
+        this.currentPlayer = player1;
+        this.winner = this.loser = null;
     }
 
-    public Board(Game game, String gameStateFileName) {
+    public State(Game game, Player player1, Player player2, String gameStateFileName) {
+        this(game, player1, player2, 0, 0);
         this.game = game;
+        this.player1 = player1;
+        this.player2 = player2;
         // TODO: Implement method
     }
+
+    @Override
+    protected State clone() {
+        State clone = new State(game, player1, player2, width, height);
+
+        for (int i = 0; i <= height; ++i)
+            for (int j = 0; j <= width; ++j) {
+                if (j < width) clone.hEdgeMatrix[i][j] = hEdgeMatrix[i][j];
+                if (i < height) clone.vEdgeMatrix[i][j] = vEdgeMatrix[i][j];
+                if (j < width && i < height) {
+                    clone.boxMatrix[i][j] = boxMatrix[i][j];
+                }
+            }
+
+        clone.canModifyGame = canModifyGame;
+        clone.numberOfAvailableMoves = numberOfAvailableMoves;
+        clone.score1 = score1;
+        clone.score2 = score2;
+        clone.lastEdge = lastEdge.clone();
+        clone.currentPlayer = currentPlayer;
+        clone.winner = winner;
+        clone.loser = loser;
+
+        return clone;
+    }
+
+    public Player getPlayer1() { return player1; }
+    public Player getPlayer2() { return player2; }
 
     public int getWidth() { return width; }
     public int getHeight() { return height; }
 
-    public int getMaxScore() {
-        final int maxScore = width * height;
-        return maxScore;
+    public int getNumberOfAvailableMoves() { return numberOfAvailableMoves; }
+
+    public int getPlayer1Score() { return score1; }
+    public int getPlayer2Score() { return score2; }
+    public int getMaxScore() { return maxScore; }
+
+    public int getCurrentPlayerScore() {
+        if (currentPlayer == player1) return score1;
+        return score2;
     }
 
-    public int getNumberOfAvailableMoves() { return numberOfAvailableMoves; }
+    public Player getCurrentPlayer() { return currentPlayer; }
+    public Player getWinner() { return winner; }
+    public Player getLoser() { return loser; }
 
     public List<Edge> getAvailableMoves() {
         ArrayList<Edge> availableMoves = new ArrayList<>();
@@ -95,6 +149,23 @@ public class Board {
     public Edge getRightEdge(int x, int y) { return getEdge(false, x + 1, y); }
     public boolean isRightEdgeSet(int x, int y) { return isEdgeSet(false, x + 1, y); }
 
+    public int getEdgeCount(int x, int y) {
+        int count = 0;
+        if (isTopEdgeSet(x, y)) ++count;
+        if (isBottomEdgeSet(x, y)) ++count;
+        if (isLeftEdgeSet(x, y)) ++count;
+        if (isRightEdgeSet(x, y)) ++count;
+        return count;
+    }
+
+    public int getBoxCount(int numEdges) {
+        int count = 0;
+        for (int i = 0; i < height; ++i)
+            for (int j = 0; j < width; ++j)
+                if (getEdgeCount(j, i) == numEdges) ++count;
+        return count;
+    }
+
     public boolean closesBox(Edge edge) {
         int x = edge.getX(), y = edge.getY();
         if (edge.isHorizontal()) {
@@ -107,44 +178,72 @@ public class Board {
         return false;
     }
 
-    public boolean playerDrawEdge(Edge edge) {
-        if (!edge.isValid()) return false;
-        if (numberOfAvailableMoves == 0) return false;
-        Player player = game.getCurrentPlayer();
+    public boolean addsThirdEdge(Edge edge) {
         int x = edge.getX(), y = edge.getY();
-        byte colorValue = player.getColorValue();
-        int score = player.getScore();
-        boolean playsAgain = false;
-        if (lastEdge.isValid()) game.getBoard().setEdgeColorValue(lastEdge, ColorValue.BLACK);
+        if (edge.isHorizontal()) {
+            if (y > 0 && getEdgeCount(x, y - 1) == 2) return true;
+            if (y < height && getEdgeCount(x, y) == 2) return true;
+        } else {
+            if (x > 0 && getEdgeCount(x - 1, y) == 2) return true;
+            if (x < width && getEdgeCount(x, y) == 2) return true;
+        }
+        return false;
+    }
+
+    public void playerDrawEdge(Edge edge) {
+        if (edge == null || !edge.isValid() || numberOfAvailableMoves == 0) return;
+        int x = edge.getX(), y = edge.getY();
+        if (lastEdge.isValid()) setEdgeColorValue(lastEdge, ColorValue.BLACK);
         lastEdge.copy(edge);
         numberOfAvailableMoves--;
         if (numberOfAvailableMoves == 0) setEdgeColorValue(edge, ColorValue.BLACK);
-        else setEdgeColorValue(edge, ColorValue.getLastEdgeColor(colorValue));
+        else setEdgeColorValue(edge, ColorValue.getLastEdgeColor(currentPlayer.getColorValue()));
+        int score = currentPlayer == player1 ? score1 : score2;
+        boolean playsAgain = false;
         if (edge.isHorizontal()) {
             if (y > 0 && isTopEdgeSet(x, y - 1) && isLeftEdgeSet(x, y - 1) && isRightEdgeSet(x, y - 1)) {
-                setBoxColorValue(x, y - 1, colorValue);
+                setBoxColorValue(x, y - 1, currentPlayer.getColorValue());
                 score++;
                 playsAgain = true;
             }
             if (y < height && isBottomEdgeSet(x, y) && isLeftEdgeSet(x, y) && isRightEdgeSet(x, y)) {
-                setBoxColorValue(x, y, colorValue);
+                setBoxColorValue(x, y, currentPlayer.getColorValue());
                 score++;
                 playsAgain = true;
             }
         } else {
             if (x > 0 && isLeftEdgeSet(x - 1, y) && isTopEdgeSet(x - 1, y) && isBottomEdgeSet(x - 1, y)) {
-                setBoxColorValue(x - 1, y, colorValue);
+                setBoxColorValue(x - 1, y, currentPlayer.getColorValue());
                 score++;
                 playsAgain = true;
             }
             if (x < width && isRightEdgeSet(x, y) && isTopEdgeSet(x, y) && isBottomEdgeSet(x, y)) {
-                setBoxColorValue(x, y, colorValue);
+                setBoxColorValue(x, y, currentPlayer.getColorValue());
                 score++;
                 playsAgain = true;
             }
         }
-        player.setScore(score);
-        if (numberOfAvailableMoves == 0) game.endGame();
-        return playsAgain;
+        if (currentPlayer == player1) score1 = score;
+        else score2 = score;
+        if (!playsAgain) currentPlayer = currentPlayer.equals(player1) ? player2 : player1;
+        if (score1 + score2 == getMaxScore()) {
+            if (score1 > score2) { // player 1 wins
+                winner = player1;
+                loser = player2;
+            } else if (score1 < score2) { // player 2 wins
+                winner = player2;
+                loser = player1;
+            } else { // tie
+                winner = loser = null;
+            }
+        }
+        if (canModifyGame && numberOfAvailableMoves == 0) game.endGame();
+    }
+
+    public State getNextBoardState(Edge move) {
+        State nextState = clone();
+        nextState.canModifyGame = false;
+        nextState.playerDrawEdge(move);
+        return nextState;
     }
 }

@@ -2,11 +2,13 @@ package etf.dotsandboxes.nj160040d.logic;
 
 import etf.dotsandboxes.nj160040d.gui.ColorValue;
 
-public class Edge {
+public class Edge implements Cloneable {
 
-    byte colorValue;
-    int x, y;
-    boolean horizontal;
+    public static final Edge INVALID = new Edge();
+
+    private byte colorValue;
+    private int x, y;
+    private boolean horizontal;
 
     public Edge(byte colorValue, int x, int y, boolean horizontal) {
         this.colorValue = colorValue;
@@ -21,6 +23,11 @@ public class Edge {
 
     public Edge() {
         this((byte) 0, -1, -1, false);
+    }
+
+    @Override
+    protected Edge clone() {
+        return new Edge(colorValue, x, y, horizontal);
     }
 
     public Edge copy(Edge edge) {

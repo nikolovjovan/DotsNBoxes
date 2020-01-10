@@ -15,17 +15,17 @@ public class GameContentPane extends JPanel {
     static final String gameInterruptedMessage = "Game was interrupted!";
     static final Font messageFont = new Font("Arial", Font.BOLD, 32);
 
-    Game game;
+    private Game game;
 
-    JPanel headerPanel, contentPanel, footerPanel;
-    ScorePanel scorePanel;
-    GameBoardPanel gameBoardPanel;
-    JLabel messageLabel;
-    GridBagConstraints messageLabelConstraints;
+    private JPanel headerPanel, contentPanel, footerPanel;
+    private ScorePanel scorePanel;
+    private GameBoardPanel gameBoardPanel;
+    private JLabel messageLabel;
+    private GridBagConstraints messageLabelConstraints;
 
-    String message;
-    Color messageColor;
-    boolean messageOnScorePanel;
+    private String message;
+    private Color messageColor;
+    private boolean messageOnScorePanel;
 
     public GameContentPane(Game game) {
         this.game = game;
@@ -43,10 +43,10 @@ public class GameContentPane extends JPanel {
         scorePanel.update();
         gameBoardPanel.update();
         if (game.isOver()) {
-            if (game.getWinner() != null) {
-                showMessage(game.getWinner().getName() + " Won!",
-                        ColorValue.valueToColor(ColorValue.getLastEdgeColor(game.getWinner().getColorValue())));
-            } else if (game.getPlayer1().getScore() == game.getPlayer2().getScore()) {
+            if (game.getState().getWinner() != null) {
+                showMessage(game.getState().getWinner().getName() + " Won!",
+                        ColorValue.valueToColor(ColorValue.getLastEdgeColor(game.getState().getWinner().getColorValue())));
+            } else if (game.getState().getPlayer1Score() == game.getState().getPlayer2Score()) {
                 showMessage(tieMessage, ColorValue.colorBlack);
             } else {
                 showMessage(gameInterruptedMessage, ColorValue.colorBlack);
@@ -98,7 +98,7 @@ public class GameContentPane extends JPanel {
 
         constraints.weighty = 0;
 
-        scorePanel = new ScorePanel(game);
+        scorePanel = new ScorePanel(game.getState());
         scorePanel.setMessageFont(messageFont);
         SwingUtils.addComponentVertically(headerPanel, scorePanel, constraints);
 

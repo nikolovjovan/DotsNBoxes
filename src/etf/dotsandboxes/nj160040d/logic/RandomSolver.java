@@ -6,8 +6,8 @@ import java.util.List;
 
 public class RandomSolver implements Solver {
 
-    Game game;
-    AIPlayer player;
+    private Game game;
+    private AIPlayer player;
 
     public RandomSolver(AIPlayer player) {
         this.player = player;
@@ -16,9 +16,9 @@ public class RandomSolver implements Solver {
 
     @Override
     public Edge getNextMove() {
-        if (game.getBoard().numberOfAvailableMoves == 0) return new Edge();
-        List<Edge> availableMoves = game.getBoard().getAvailableMoves();
-        for (Edge move : availableMoves) if (game.getBoard().closesBox(move)) return move;
+        if (game.getState().getNumberOfAvailableMoves() == 0) return new Edge();
+        List<Edge> availableMoves = game.getState().getAvailableMoves();
+        for (Edge move : availableMoves) if (game.getState().closesBox(move)) return move;
         return availableMoves.get((int) Math.floor(Math.random() * availableMoves.size()));
     }
 }

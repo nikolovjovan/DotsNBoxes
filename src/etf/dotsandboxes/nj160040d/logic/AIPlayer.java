@@ -27,16 +27,15 @@ public class AIPlayer extends Player {
         }
     }
 
-    Difficulty difficulty;
-    int treeDepth;
-    Solver solver;
+    private int maxDepth;
+    private Solver solver;
 
-    public AIPlayer(Game game, String name, byte colorValue, String difficulty, int treeDepth) {
+    public AIPlayer(Game game, String name, byte colorValue, String difficulty, int maxDepth) {
         super(game, Type.AI, name, colorValue);
-        this.difficulty = Difficulty.fromString(difficulty);
-        this.treeDepth = treeDepth;
-        if (this.difficulty == null) throw new RuntimeException("AI Player difficulty: " + difficulty + " is invalid!");
-        switch (this.difficulty) {
+        Difficulty difficulty1 = Difficulty.fromString(difficulty);
+        this.maxDepth = maxDepth;
+        if (difficulty1 == null) throw new RuntimeException("AI Player difficulty: " + difficulty + " is invalid!");
+        switch (difficulty1) {
             case BEGINNER: {
                 this.solver = new RandomSolver(this);
                 break;
@@ -52,8 +51,10 @@ public class AIPlayer extends Player {
         }
     }
 
-    public void computeNextMove() { game.playerDone(); }
+    public int getMaxDepth() { return maxDepth; }
 
-    @Override
-    public Edge getNextMove() { return solver.getNextMove(); }
+    public void computeNextMove() {
+        nextMove = solver.getNextMove();
+        game.playerDone();
+    }
 }
