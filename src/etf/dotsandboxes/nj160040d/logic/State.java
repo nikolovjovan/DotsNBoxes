@@ -3,10 +3,15 @@ package etf.dotsandboxes.nj160040d.logic;
 import etf.dotsandboxes.nj160040d.Game;
 import etf.dotsandboxes.nj160040d.gui.ColorValue;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
-public class State implements Cloneable {
+public class State {
+
+    public static int parsedWidth, parsedHeight;
+    public static List<Edge> parsedMoves;
 
     private Game game;
 
@@ -45,16 +50,7 @@ public class State implements Cloneable {
         this.canModifyGame = true;
     }
 
-    public State(Game game, Player player1, Player player2, String gameStateFileName) {
-        this(game, player1, player2, 0, 0);
-        this.game = game;
-        this.player1 = player1;
-        this.player2 = player2;
-        // TODO: Implement method
-    }
-
-    @Override
-    protected State clone() {
+    public State getClone() {
         State clone = new State(game, player1, player2, width, height);
 
         clone.currentPlayer = currentPlayer;
@@ -62,7 +58,7 @@ public class State implements Cloneable {
         clone.score1 = score1;
         clone.score2 = score2;
 
-        clone.lastMove = lastMove.clone();
+        clone.lastMove = lastMove.getClone();
         clone.numberOfAvailableMoves = numberOfAvailableMoves;
 
         for (int i = 0; i <= height; ++i)
@@ -77,6 +73,55 @@ public class State implements Cloneable {
         clone.canModifyGame = canModifyGame;
 
         return clone;
+    }
+
+    public static boolean tryParseGameStateFromFile(String gameStateFilePath) {
+        try (Scanner sc = new Scanner(new File(gameStateFilePath))) {
+            parsedWidth = sc.nextInt();
+            parsedHeight = sc.nextInt();
+            sc.nextLine();
+            if (parsedWidth > 0 && parsedHeight > 0) {
+                System.out.println("Board size: " + parsedWidth + "x" + parsedHeight);
+                parsedMoves = new ArrayList<>();
+                while (sc.hasNextLine()) {
+                    String move = sc.nextLine();
+                    if (move.isEmpty()) continue;
+                    System.out.println("Read move: '" + move + "'");
+                    Edge parsedMove = Edge.parseEdgeFromString(move);
+                    if (parsedMove == null) {
+                        System.err.println("Error! Failed to parse move: '" + move + "'.");
+                        return false;
+                    }
+                    System.out.println("Parsed move: " + parsedMove);
+                    parsedMoves.add(parsedMove);
+                }
+                return true;
+            } else {
+                System.err.println("Error! Invalid board size: " + parsedWidth + "x" + parsedHeight + ".");
+            }
+        } catch (FileNotFoundException e) {
+            System.err.println("Error! Invalid game state file path: '" + gameStateFilePath + "'.");
+        } catch (Exception e) {
+            e.printStackTrace(System.err);
+        }
+        return false;
+    }
+
+    public static boolean tryExportGameStateToFile(State state, String gameStateFilePath) {
+        if (state == null) return false;
+        try (PrintWriter writer = new PrintWriter(gameStateFilePath, "UTF-8")) {
+            writer.println(state.getWidth() + " " + state.getHeight());
+            for (Edge move : state.game.getMoves()) {
+                System.out.println("Move: " + move + " generated string: " + Edge.generateStringFromEdge(move));
+                writer.println(Edge.generateStringFromEdge(move));
+            }
+            return true;
+        } catch (FileNotFoundException e) {
+            System.err.println("Error! Invalid game state file path: '" + gameStateFilePath + "'.");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace(System.err);
+        }
+        return false;
     }
 
     public Player getPlayer1() { return player1; }
@@ -169,7 +214,7 @@ public class State implements Cloneable {
     }
 
     public State getNextBoardState(Edge move) {
-        State nextState = clone();
+        State nextState = getClone();
         nextState.canModifyGame = false;
         nextState.makeMove(move);
         return nextState;
@@ -207,13 +252,14 @@ public class State implements Cloneable {
         boolean stateChanged = true;
         while (stateChanged) {
             stateChanged = false;
-            for (int i = 0; i < availableMoves.size(); ++i) {
+            int i = 0;
+            while (i < availableMoves.size()) {
                 if (addsNthEdge(availableMoves.get(i), 4)) {
                     makeMove(availableMoves.get(i));
                     boxCount++;
                     availableMoves.remove(i);
                     stateChanged = true;
-                }
+                } else ++i;
             }
         }
         return boxCount;

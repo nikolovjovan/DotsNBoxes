@@ -1,12 +1,17 @@
 package etf.dotsandboxes.nj160040d.gui;
 
 import etf.dotsandboxes.nj160040d.Game;
+import etf.dotsandboxes.nj160040d.logic.Edge;
+import etf.dotsandboxes.nj160040d.logic.Node;
+import etf.dotsandboxes.nj160040d.logic.State;
 import etf.dotsandboxes.nj160040d.util.SwingUtils;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.util.List;
 
 public class GameContentPane extends JPanel {
 
@@ -20,6 +25,10 @@ public class GameContentPane extends JPanel {
     private JPanel headerPanel, contentPanel, footerPanel;
     private ScorePanel scorePanel;
     private GameBoardPanel gameBoardPanel;
+    private JLabel heuristicLabel;
+    private DefaultListModel<String> movesListModel;
+    private JList<String> movesList;
+    private JScrollBar movesVerticalScrollBar;
     private JLabel messageLabel;
     private GridBagConstraints messageLabelConstraints;
 
@@ -42,6 +51,12 @@ public class GameContentPane extends JPanel {
     public void update() {
         scorePanel.update();
         gameBoardPanel.update();
+        if (game.getMode() == Game.Mode.CvC_STEP) {
+            Edge move = game.getMoves().get(game.getMoves().size() - 1);
+            movesListModel.addElement(move.toString() + " (" + Edge.generateStringFromEdge(move) + ")");
+            movesList.setSelectedIndex(movesListModel.getSize() - 1);
+            movesVerticalScrollBar.setValue(movesVerticalScrollBar.getMaximum());
+        }
         if (game.isOver()) {
             if (game.getState().getWinner() != null) {
                 showMessage(game.getState().getWinner().getName() + " Won!",
@@ -52,6 +67,23 @@ public class GameContentPane extends JPanel {
                 showMessage(gameInterruptedMessage, ColorValue.colorBlack);
             }
         }
+    }
+
+    public void showHeuristic(Edge move) {
+        if (game.getMode() != Game.Mode.CvC_STEP) return;
+        List<Node> nodes = game.getHeuristics();
+        if (nodes == null || nodes.size() == 0) return;
+        Node selectedNode = null;
+        for (Node node : nodes)
+            if (node.getMove().equals(move)) {
+                selectedNode = node;
+                break;
+            }
+        if (selectedNode == null) {
+            heuristicLabel.setText("No heuristic info");
+            return;
+        }
+        heuristicLabel.setText("Move " + move + (Edge.generateStringFromEdge(move)) + " heuristic: " + selectedNode.getHeuristic());
     }
 
     private void updateMessageRenderer(String message) {
@@ -127,7 +159,32 @@ public class GameContentPane extends JPanel {
 
         gameBoardPanel = new GameBoardPanel(game);
         constraints.weighty = 1;
-        SwingUtils.addComponentVertically(contentPanel, gameBoardPanel, constraints);
+
+        if (game.getMode() != Game.Mode.CvC_STEP) {
+            SwingUtils.addComponentVertically(contentPanel, gameBoardPanel, constraints);
+        } else {
+            SwingUtils.addComponentHorizontally(contentPanel, gameBoardPanel, constraints);
+            constraints.weightx = constraints.weighty = 0;
+            SwingUtils.addHorizontalSpacer(contentPanel, constraints, 10);
+            JPanel analyticsPanel = new JPanel(new GridLayout(4, 1));
+            heuristicLabel = new JLabel("Heuristic: ");
+            heuristicLabel.setFont(new Font("Arial", Font.BOLD, 20));
+            analyticsPanel.add(heuristicLabel);
+            JLabel movesLabel = new JLabel("Moves:");
+            movesLabel.setFont(new Font("Arial", Font.BOLD, 20));
+            analyticsPanel.add(movesLabel);
+            movesListModel = new DefaultListModel<>();
+            movesList = new JList<>(movesListModel);
+            movesList.setFixedCellWidth(80);
+            JScrollPane movesListScrollPane = new JScrollPane(movesList);
+            movesListScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+            movesVerticalScrollBar = movesListScrollPane.getVerticalScrollBar();
+            analyticsPanel.add(movesListScrollPane);
+            SwingUtils.addComponentHorizontally(contentPanel, analyticsPanel, constraints);
+            SwingUtils.addHorizontalSpacer(contentPanel, constraints, 20);
+            constraints.gridx = 0;
+            ++constraints.gridy;
+        }
 
         constraints.weighty = 0;
         SwingUtils.addVerticalSpacer(contentPanel, constraints, 10);
@@ -141,21 +198,70 @@ public class GameContentPane extends JPanel {
         constraints.weighty = 0;
         SwingUtils.addVerticalSpacer(footerPanel, constraints, 10);
 
-        JPanel endButtonPanel = new JPanel(new GridBagLayout());
-        GridBagConstraints endButtonPanelConstraints = SwingUtils.createConstraints(5, false);
+        JPanel buttonPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints buttonPanelConstraints = SwingUtils.createConstraints(5, false);
         if (game.getMode() == Game.Mode.CvC_STEP) {
             JButton nextStepButton = new JButton("Next Step");
             nextStepButton.setFont(new Font("Arial", Font.PLAIN, 40));
             nextStepButton.addActionListener(e -> game.nextStep());
-            SwingUtils.addComponentHorizontally(endButtonPanel, nextStepButton, endButtonPanelConstraints);
+            SwingUtils.addComponentHorizontally(buttonPanel, nextStepButton, buttonPanelConstraints);
         }
         JButton endButton = new JButton("End Game");
         endButton.setFont(new Font("Arial", Font.PLAIN, 40));
-        endButton.addActionListener(e -> game.showMainMenu());
-        SwingUtils.addComponentHorizontally(endButtonPanel, endButton, endButtonPanelConstraints);
+        endButton.addActionListener(e -> {
+            if (!game.isOver()) {
+                if (JOptionPane.showConfirmDialog(this,
+                        "Game is not over yet. Are you sure you want to end it?",
+                        "Question?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) ==
+                        JOptionPane.NO_OPTION) return;
+            }
+            if (JOptionPane.showConfirmDialog(this,
+                    "Do you want to save game state to a file?",
+                    "Question?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) ==
+                    JOptionPane.YES_OPTION) {
+                JFileChooser fileChooser = new JFileChooser();
+                FileNameExtensionFilter stateFilter = new FileNameExtensionFilter("Game state file (*.state)", "state");
+                FileNameExtensionFilter textFilter = new FileNameExtensionFilter("Normal text file (*.txt)", "txt");
+                fileChooser.addChoosableFileFilter(stateFilter);
+                fileChooser.addChoosableFileFilter(textFilter);
+                fileChooser.setFileFilter(stateFilter);
+                boolean invalid = true;
+                while (invalid) {
+                    int returnVal = fileChooser.showSaveDialog(this);
+                    if (returnVal == JFileChooser.APPROVE_OPTION) {
+                        String filePath = fileChooser.getSelectedFile().getAbsolutePath();
+                        if (fileChooser.getFileFilter() == stateFilter) filePath += ".state";
+                        else if (fileChooser.getFileFilter() == textFilter) filePath += ".txt";
+                        if (State.tryExportGameStateToFile(game.getState(), filePath)) {
+                            invalid = false;
+                            JOptionPane.showMessageDialog(this,
+                                    "Successfully exported game state file!",
+                                    "Info", JOptionPane.INFORMATION_MESSAGE);
+                        } else {
+                            if (JOptionPane.showConfirmDialog(this,
+                                    "Failed to export game state file! Please try another again.",
+                                    "Error!", JOptionPane.OK_CANCEL_OPTION, JOptionPane.ERROR_MESSAGE) ==
+                                    JOptionPane.CANCEL_OPTION) {
+                                if (JOptionPane.showConfirmDialog(this,
+                                        "Are you sure you want to cancel?",
+                                        "Question?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) ==
+                                        JOptionPane.YES_OPTION) invalid = false;
+                            }
+                        }
+                    } else {
+                        if (JOptionPane.showConfirmDialog(this,
+                                "Are you sure you want to cancel?",
+                                "Question?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) ==
+                                JOptionPane.YES_OPTION) invalid = false;
+                    }
+                }
+            }
+            game.showMainMenu();
+        });
+        SwingUtils.addComponentHorizontally(buttonPanel, endButton, buttonPanelConstraints);
 
         constraints.weighty = 1;
-        SwingUtils.addComponentVertically(footerPanel, endButtonPanel, constraints);
+        SwingUtils.addComponentVertically(footerPanel, buttonPanel, constraints);
 
         constraints.weighty = 0;
         SwingUtils.addVerticalSpacer(footerPanel, constraints, 10);

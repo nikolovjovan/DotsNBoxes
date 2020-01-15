@@ -1,6 +1,7 @@
 package etf.dotsandboxes.nj160040d.gui;
 
 import etf.dotsandboxes.nj160040d.Game;
+import etf.dotsandboxes.nj160040d.logic.Edge;
 import etf.dotsandboxes.nj160040d.util.SwingUtils;
 
 import javax.swing.*;
@@ -40,6 +41,11 @@ public class GameFrame extends JFrame {
     public void update() {
         if (!gameInProgress) return;
         ((GameContentPane) getContentPane()).update();
+    }
+
+    public void showHeuristic(Edge move) {
+        if (!gameInProgress) return;
+        ((GameContentPane) getContentPane()).showHeuristic(move);
     }
 
     private void changeContent(boolean gameInProgress) {

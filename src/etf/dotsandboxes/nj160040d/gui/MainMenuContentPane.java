@@ -5,12 +5,12 @@ import etf.dotsandboxes.nj160040d.Game;
 import etf.dotsandboxes.nj160040d.util.SwingUtils;
 
 import javax.swing.*;
-import javax.swing.Box;
+import javax.swing.event.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.image.BufferedImage;
+import java.awt.event.*;
+import java.awt.image.*;
+import java.nio.file.Paths;
 
 public class MainMenuContentPane extends JPanel {
 
@@ -32,12 +32,13 @@ public class MainMenuContentPane extends JPanel {
     private JPanel speedPanel;
     private JRadioButton modePvCRadioButton, modePvPRadioButton, modeCvCRadioButton, speedStep;
     private JTextField[] playerNameTextField;
-    private JComboBox<String>[] aiPlayerDifficultyComboBox;
+    private JComboBox[] aiPlayerDifficultyComboBox;
     private SpinnerModel[] aiPlayerTreeDepthModel;
+    private JSpinner[] aiPlayerTreeDepthSpinner;
     private JPanel boardSizePanel;
     private JPanel[] aiPlayerPanel;
 
-    private String gameStateFileName;
+    private String gameStateFilePath;
 
     static {
         AIPlayer.Difficulty[] difficulties = AIPlayer.Difficulty.values();
@@ -87,6 +88,16 @@ public class MainMenuContentPane extends JPanel {
         if (isDefault && !playerName.equals(getDefaultPlayerName(playerIndex)))
             playerNameTextField[playerIndex].setText(getDefaultPlayerName(playerIndex));
     }
+
+    private ChangeListener boardSizeChangeListener = e -> {
+        int width = (int) boardWidthModel.getValue(), height = (int) boardHeightModel.getValue();
+        int maxTreeDepth = width * height + width + height;
+        for (int i = 0; i < 2; ++i) {
+            int currentTreeDepth = Math.min(maxTreeDepth, (int) aiPlayerTreeDepthModel[i].getValue());
+            aiPlayerTreeDepthModel[i] = new SpinnerNumberModel(currentTreeDepth, 1, maxTreeDepth, 1);
+            aiPlayerTreeDepthSpinner[i].setModel(aiPlayerTreeDepthModel[i]);
+        }
+    };
 
     private ActionListener modeChangeActionListener = e -> {
         for (int i = 0; i < 2; ++i) {
@@ -160,18 +171,41 @@ public class MainMenuContentPane extends JPanel {
 
         JButton gameStateFileOpenButton = new JButton("Open");
         gameStateFileOpenButton.addActionListener(e -> {
-            JFileChooser fileChooser = new JFileChooser();
-            int returnVal = fileChooser.showOpenDialog(this);
-            if (returnVal == JFileChooser.APPROVE_OPTION) {
-                gameStateFileName = fileChooser.getSelectedFile().getName();
-                gameStateFileTextField.setText(gameStateFileName);
-                SwingUtils.setPanelEnabled(boardSizePanel, false);
+            JFileChooser fileChooser = gameStateFilePath != null && !gameStateFilePath.isEmpty() ?
+                    new JFileChooser(Paths.get(gameStateFilePath).getParent().toString()) : new JFileChooser();
+            FileNameExtensionFilter defaultFilter = new FileNameExtensionFilter("Game state file (*.state)", "state");
+            fileChooser.addChoosableFileFilter(defaultFilter);
+            fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("Normal text file (*.txt)", "txt"));
+            fileChooser.setFileFilter(defaultFilter);
+            boolean invalid = true;
+            while (invalid) {
+                int returnVal = fileChooser.showOpenDialog(this);
+                if (returnVal == JFileChooser.APPROVE_OPTION) {
+                    String filePath = fileChooser.getSelectedFile().getAbsolutePath();
+                    if (State.tryParseGameStateFromFile(filePath)) {
+                        gameStateFilePath = filePath;
+                        gameStateFileTextField.setText(gameStateFilePath);
+                        boardWidthModel.setValue(State.parsedWidth);
+                        boardHeightModel.setValue(State.parsedHeight);
+                        SwingUtils.setPanelEnabled(boardSizePanel, false);
+                        invalid = false;
+                        JOptionPane.showMessageDialog(this,
+                                "Successfully parsed game state file! Board size: " + State.parsedWidth + "x" +
+                                        State.parsedHeight + ". Parsed " + State.parsedMoves.size() + " moves.",
+                                "Info", JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        if (JOptionPane.showConfirmDialog(this,
+                                "Invalid game state file format! Please try another file.",
+                                "Error!", JOptionPane.OK_CANCEL_OPTION, JOptionPane.ERROR_MESSAGE) ==
+                                JOptionPane.CANCEL_OPTION) invalid = false;
+                    }
+                } else invalid = false;
             }
         });
 
         JButton gameStateFileCancelButton = new JButton("Cancel");
         gameStateFileCancelButton.addActionListener(e -> {
-            gameStateFileName = null;
+            gameStateFilePath = null;
             gameStateFileTextField.setText("Click the 'Open' button to choose a file");
             SwingUtils.setPanelEnabled(boardSizePanel, true);
         });
@@ -192,15 +226,21 @@ public class MainMenuContentPane extends JPanel {
         boardWidthModel = new SpinnerNumberModel(3, 2, 90, 1);
         boardHeightModel = new SpinnerNumberModel(3, 2, 35, 1);
 
+        JSpinner boardWidthSpinner = new JSpinner(boardWidthModel);
+        JSpinner boardHeightSpinner = new JSpinner(boardHeightModel);
+
+        boardWidthSpinner.addChangeListener(boardSizeChangeListener);
+        boardHeightSpinner.addChangeListener(boardSizeChangeListener);
+
         boardSizePanel = new JPanel();
         GridLayout boardSizePanelLayout = new GridLayout(2, 2);
         boardSizePanelLayout.setHgap(5);
         boardSizePanelLayout.setVgap(5);
         boardSizePanel.setLayout(boardSizePanelLayout);
         boardSizePanel.add(new JLabel("Board width:"));
-        boardSizePanel.add(new JSpinner(boardWidthModel));
+        boardSizePanel.add(boardWidthSpinner);
         boardSizePanel.add(new JLabel("Board height:"));
-        boardSizePanel.add(new JSpinner(boardHeightModel));
+        boardSizePanel.add(boardHeightSpinner);
         boardSizePanel.setBorder(SwingUtils.createTitledBorder("Board size"));
         boardSizePanel.setPreferredSize(new Dimension(300, 106));
 
@@ -246,6 +286,7 @@ public class MainMenuContentPane extends JPanel {
 
         aiPlayerDifficultyComboBox = new JComboBox[2];
         aiPlayerTreeDepthModel = new SpinnerModel[2];
+        aiPlayerTreeDepthSpinner = new JSpinner[2];
         aiPlayerPanel = new JPanel[2];
 
         for (int i = 0; i < 2; ++i) {
@@ -260,20 +301,20 @@ public class MainMenuContentPane extends JPanel {
             playerPanel[i].setBorder(SwingUtils.createTitledBorder("Player " + (i + 1) + " Settings"));
             playerPanel[i].setPreferredSize(new Dimension(300, 54));
 
-            // TODO: Change to combobox with dynamically changing limits (remove 0 and set maximum to width*height+width+height)
-            aiPlayerTreeDepthModel[i] = new SpinnerNumberModel(1, 0, 10, 1);
+            aiPlayerTreeDepthModel[i] = new SpinnerNumberModel(1, 1, 15, 1);
             aiPlayerPanel[i] = new JPanel();
             GridLayout aiPlayerPanelLayout = new GridLayout(2, 2);
             aiPlayerPanelLayout.setHgap(5);
             aiPlayerPanelLayout.setVgap(5);
             aiPlayerPanel[i].setLayout(aiPlayerPanelLayout);
-            aiPlayerDifficultyComboBox[i] = new JComboBox(aiDifficulties);
+            aiPlayerDifficultyComboBox[i] = new JComboBox<>(aiDifficulties);
             aiPlayerDifficultyComboBox[i].setEditable(false);
             aiPlayerDifficultyComboBox[i].addActionListener(modeChangeActionListener);
+            aiPlayerTreeDepthSpinner[i] = new JSpinner(aiPlayerTreeDepthModel[i]);
             aiPlayerPanel[i].add(new JLabel("Difficulty:"));
             aiPlayerPanel[i].add(aiPlayerDifficultyComboBox[i]);
             aiPlayerPanel[i].add(new JLabel("Game tree depth:"));
-            aiPlayerPanel[i].add(new JSpinner(aiPlayerTreeDepthModel[i]));
+            aiPlayerPanel[i].add(aiPlayerTreeDepthSpinner[i]);
             aiPlayerPanel[i].setBorder(SwingUtils.createTitledBorder("AI Player " + (i + 1) + " Settings"));
             aiPlayerPanel[i].setPreferredSize(new Dimension(300, 79));
 
@@ -303,9 +344,10 @@ public class MainMenuContentPane extends JPanel {
                         (String) aiPlayerDifficultyComboBox[i].getSelectedItem(), (int) aiPlayerTreeDepthModel[i].getValue());
                 else players[i] = new HumanPlayer(game, getPlayerName(i), playerColors[i]);
             }
-            State state = gameStateFileName == null ?
+            State state = gameStateFilePath == null ?
                     new State(game, players[0], players[1], (int) boardWidthModel.getValue(), (int) boardHeightModel.getValue()) :
-                    new State(game, players[0], players[1], gameStateFileName);
+                    new State(game, players[0], players[1], State.parsedWidth, State.parsedHeight);
+            if (gameStateFilePath != null) for (Edge move : State.parsedMoves) state.makeMove(move);
             Game.Mode mode;
             if (modePvCRadioButton.isSelected()) mode = Game.Mode.PvC;
             else if (modePvPRadioButton.isSelected()) mode = Game.Mode.PvP;

@@ -1,11 +1,11 @@
 package etf.dotsandboxes.nj160040d;
 
 import etf.dotsandboxes.nj160040d.gui.GameFrame;
-import etf.dotsandboxes.nj160040d.logic.AIPlayer;
-import etf.dotsandboxes.nj160040d.logic.Player;
-import etf.dotsandboxes.nj160040d.logic.State;
+import etf.dotsandboxes.nj160040d.logic.*;
 
 import java.awt.EventQueue;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Game implements Runnable {
 
@@ -17,6 +17,8 @@ public class Game implements Runnable {
     private GameFrame gameFrame;
     private State state;
     private Mode mode;
+    private List<Edge> moves;
+    private List<Node> heuristics;
     private boolean started, playerDone, nextStep, over, showMainMenu;
 
     public Game() {
@@ -26,8 +28,13 @@ public class Game implements Runnable {
     }
 
     public State getState() { return state; }
-
     public Mode getMode() { return mode; }
+
+    public List<Edge> getMoves() { return moves; }
+    public List<Node> getHeuristics() { return heuristics; }
+    public void setHeuristics(List<Node> heuristics) { this.heuristics = heuristics; }
+
+    public void showHeuristic(Edge move) { gameFrame.showHeuristic(move); }
 
     public boolean isOver() { return over; }
 
@@ -75,6 +82,7 @@ public class Game implements Runnable {
                     return;
                 }
             }
+            moves = new ArrayList<>();
             gameFrame.startGame();
             while (!over) {
                 if (mode == Mode.CvC_STEP) {
@@ -111,10 +119,12 @@ public class Game implements Runnable {
                         return;
                     }
                 }
-                if (state.makeMove(state.getCurrentPlayer().getNextMove())) {
+                Edge move = state.getCurrentPlayer().getNextMove();
+                if (state.makeMove(move)) {
+                    moves.add(move.getClone());
                     gameFrame.update();
                 } else {
-                    System.err.println("Error! Failed to make move: " + state.getCurrentPlayer().getNextMove());
+                    System.err.println("Error! Failed to make move: " + move);
                 }
             }
             try {

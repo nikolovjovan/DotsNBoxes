@@ -79,21 +79,23 @@ public class GameBoardPanel extends JPanel {
         updateRequiredSize();
         setPreferredSize(requiredSize);
         updateBoardLocation();
-        addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (!boardEnabled) return;
-                if (!highlightedEdge.isValid()) return;
-                ((HumanPlayer) game.getState().getCurrentPlayer()).setNextMove(highlightedEdge);
-                highlightedEdge.invalidate();
-                repaint();
-                game.playerDone();
-            }
-        });
+        if (game.getMode() != Game.Mode.CvC_STEP) {
+            addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    if (!boardEnabled) return;
+                    if (!highlightedEdge.isValid()) return;
+                    ((HumanPlayer) game.getState().getCurrentPlayer()).setNextMove(highlightedEdge);
+                    highlightedEdge.invalidate();
+                    repaint();
+                    game.playerDone();
+                }
+            });
+        }
         addMouseMotionListener(new MouseAdapter() {
             @Override
             public void mouseMoved(MouseEvent e) {
-                if (!boardEnabled) return;
+                if (game.getMode() != Game.Mode.CvC_STEP && !boardEnabled) return;
                 if (e.getX() < topLeft.x || e.getX() > bottomRight.x ||
                     e.getY() < topLeft.y || e.getY() > bottomRight.y) {
                     highlightedEdge.invalidate();
@@ -109,6 +111,7 @@ public class GameBoardPanel extends JPanel {
                     else highlightedEdge.invalidate();
                 }
                 if (highlightedEdge.isValid() && game.getState().isEdgeSet(highlightedEdge)) highlightedEdge.invalidate();
+                if (highlightedEdge.isValid() && game.getMode() == Game.Mode.CvC_STEP) game.showHeuristic(highlightedEdge);
                 repaint();
             }
         });
