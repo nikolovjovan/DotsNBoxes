@@ -6,7 +6,6 @@ import etf.dotsandboxes.nj160040d.util.SwingUtils;
 
 import javax.swing.*;
 import javax.swing.Box;
-import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -33,7 +32,8 @@ public class MainMenuContentPane extends JPanel {
     private JPanel speedPanel;
     private JRadioButton modePvCRadioButton, modePvPRadioButton, modeCvCRadioButton, speedStep;
     private JTextField[] playerNameTextField;
-    private SpinnerModel[] aiPlayerDifficultyModel, aiPlayerTreeDepthModel;
+    private JComboBox<String>[] aiPlayerDifficultyComboBox;
+    private SpinnerModel[] aiPlayerTreeDepthModel;
     private JPanel boardSizePanel;
     private JPanel[] aiPlayerPanel;
 
@@ -62,7 +62,7 @@ public class MainMenuContentPane extends JPanel {
 
     private String getDefaultPlayerName(int playerIndex) {
         if (playerIndex < 0 || playerIndex > 1) return null;
-        String name = isPlayerAI(playerIndex) ? aiPlayerDifficultyModel[playerIndex].getValue() + " AI" : "Human";
+        String name = isPlayerAI(playerIndex) ? aiPlayerDifficultyComboBox[playerIndex].getSelectedItem() + " AI" : "Human";
         return name + " Player " + (playerIndex + 1);
     }
 
@@ -88,16 +88,14 @@ public class MainMenuContentPane extends JPanel {
             playerNameTextField[playerIndex].setText(getDefaultPlayerName(playerIndex));
     }
 
-    private ActionListener modeRadioButtonActionListener = e -> {
+    private ActionListener modeChangeActionListener = e -> {
         for (int i = 0; i < 2; ++i) {
-            SwingUtils.setPanelEnabled(aiPlayerPanel[i], isPlayerAI(i));
-            SwingUtils.setPanelEnabled(speedPanel, modeCvCRadioButton.isSelected());
+            if (aiPlayerPanel[i].isEnabled() != isPlayerAI(i))
+                SwingUtils.setPanelEnabled(aiPlayerPanel[i], isPlayerAI(i));
+            if (speedPanel.isEnabled() != modeCvCRadioButton.isSelected())
+                SwingUtils.setPanelEnabled(speedPanel, modeCvCRadioButton.isSelected());
             updatePlayerName(i);
         }
-    };
-
-    private ChangeListener playerDifficultySpinnerChangeListener = e -> {
-        for (int i = 0; i < 2; ++i) updatePlayerName(i);
     };
 
     private void initHeader() {
@@ -207,11 +205,11 @@ public class MainMenuContentPane extends JPanel {
         boardSizePanel.setPreferredSize(new Dimension(300, 106));
 
         modePvCRadioButton = new JRadioButton("Player vs AI", true);
-        modePvCRadioButton.addActionListener(modeRadioButtonActionListener);
+        modePvCRadioButton.addActionListener(modeChangeActionListener);
         modePvPRadioButton = new JRadioButton("Player vs Player");
-        modePvPRadioButton.addActionListener(modeRadioButtonActionListener);
+        modePvPRadioButton.addActionListener(modeChangeActionListener);
         modeCvCRadioButton = new JRadioButton("AI vs AI");
-        modeCvCRadioButton.addActionListener(modeRadioButtonActionListener);
+        modeCvCRadioButton.addActionListener(modeChangeActionListener);
 
         ButtonGroup modeGroup = new ButtonGroup();
         modeGroup.add(modePvCRadioButton);
@@ -246,7 +244,7 @@ public class MainMenuContentPane extends JPanel {
         playerNameTextField = new JTextField[2];
         JPanel[] playerPanel = new JPanel[2];
 
-        aiPlayerDifficultyModel = new SpinnerModel[2];
+        aiPlayerDifficultyComboBox = new JComboBox[2];
         aiPlayerTreeDepthModel = new SpinnerModel[2];
         aiPlayerPanel = new JPanel[2];
 
@@ -262,17 +260,18 @@ public class MainMenuContentPane extends JPanel {
             playerPanel[i].setBorder(SwingUtils.createTitledBorder("Player " + (i + 1) + " Settings"));
             playerPanel[i].setPreferredSize(new Dimension(300, 54));
 
-            aiPlayerDifficultyModel[i] = new SpinnerListModel(aiDifficulties);
+            // TODO: Change to combobox with dynamically changing limits (remove 0 and set maximum to width*height+width+height)
             aiPlayerTreeDepthModel[i] = new SpinnerNumberModel(1, 0, 10, 1);
             aiPlayerPanel[i] = new JPanel();
             GridLayout aiPlayerPanelLayout = new GridLayout(2, 2);
             aiPlayerPanelLayout.setHgap(5);
             aiPlayerPanelLayout.setVgap(5);
             aiPlayerPanel[i].setLayout(aiPlayerPanelLayout);
-            JSpinner aiPlayerDifficultySpinner = new JSpinner(aiPlayerDifficultyModel[i]);
-            aiPlayerDifficultySpinner.addChangeListener(playerDifficultySpinnerChangeListener);
+            aiPlayerDifficultyComboBox[i] = new JComboBox(aiDifficulties);
+            aiPlayerDifficultyComboBox[i].setEditable(false);
+            aiPlayerDifficultyComboBox[i].addActionListener(modeChangeActionListener);
             aiPlayerPanel[i].add(new JLabel("Difficulty:"));
-            aiPlayerPanel[i].add(new JSpinner(aiPlayerDifficultyModel[i]));
+            aiPlayerPanel[i].add(aiPlayerDifficultyComboBox[i]);
             aiPlayerPanel[i].add(new JLabel("Game tree depth:"));
             aiPlayerPanel[i].add(new JSpinner(aiPlayerTreeDepthModel[i]));
             aiPlayerPanel[i].setBorder(SwingUtils.createTitledBorder("AI Player " + (i + 1) + " Settings"));
@@ -301,7 +300,7 @@ public class MainMenuContentPane extends JPanel {
             Player[] players = new Player[2];
             for (int i = 0; i < 2; ++i) {
                 if (isPlayerAI(i)) players[i] = new AIPlayer(game, getPlayerName(i), playerColors[i],
-                        (String) aiPlayerDifficultyModel[i].getValue(), (int) aiPlayerTreeDepthModel[i].getValue());
+                        (String) aiPlayerDifficultyComboBox[i].getSelectedItem(), (int) aiPlayerTreeDepthModel[i].getValue());
                 else players[i] = new HumanPlayer(game, getPlayerName(i), playerColors[i]);
             }
             State state = gameStateFileName == null ?

@@ -17,7 +17,7 @@ public abstract class Player implements Solver {
         this.type = type;
         this.name = name;
         this.colorValue = colorValue;
-        this.nextMove = new Edge();
+        this.nextMove = Edge.INVALID;
     }
 
     public Type getType() { return type; }

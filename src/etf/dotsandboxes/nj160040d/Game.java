@@ -71,7 +71,7 @@ public class Game implements Runnable {
                 while (!started) Thread.sleep(60000);
             } catch (InterruptedException e) {
                 if (!started) {
-                    System.out.println("Error! Game is not started but thread is interrupted!");
+                    System.err.println("Error! Game is not started but thread is interrupted!");
                     return;
                 }
             }
@@ -84,7 +84,7 @@ public class Game implements Runnable {
                     } catch (InterruptedException e) {
                         if (over) break;
                         if (!nextStep) {
-                            System.out.println("Error! Next step not activated but thread is interrupted!");
+                            System.err.println("Error! Next step not activated but thread is interrupted!");
                             return;
                         }
                     }
@@ -107,18 +107,21 @@ public class Game implements Runnable {
                 } catch (InterruptedException e) {
                     if (over) break;
                     if (!playerDone) {
-                        System.out.println("Error! Player not done but thread is interrupted!");
+                        System.err.println("Error! Player not done but thread is interrupted!");
                         return;
                     }
                 }
-                state.playerDrawEdge(state.getCurrentPlayer().getNextMove());
-                gameFrame.update();
+                if (state.makeMove(state.getCurrentPlayer().getNextMove())) {
+                    gameFrame.update();
+                } else {
+                    System.err.println("Error! Failed to make move: " + state.getCurrentPlayer().getNextMove());
+                }
             }
             try {
                 while (!showMainMenu) Thread.sleep(60000);
             } catch (InterruptedException e) {
                 if (!showMainMenu) {
-                    System.out.println("Error! Game is not finished but thread is interrupted!");
+                    System.err.println("Error! Game is not finished but thread is interrupted!");
                     return;
                 }
             }
