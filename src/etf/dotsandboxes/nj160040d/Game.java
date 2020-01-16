@@ -85,18 +85,6 @@ public class Game implements Runnable {
             moves = new ArrayList<>();
             gameFrame.startGame();
             while (!over) {
-                if (mode == Mode.CvC_STEP) {
-                    nextStep = false;
-                    try {
-                        while (!nextStep) Thread.sleep(60000);
-                    } catch (InterruptedException e) {
-                        if (over) break;
-                        if (!nextStep) {
-                            System.err.println("Error! Next step not activated but thread is interrupted!");
-                            return;
-                        }
-                    }
-                }
                 playerDone = false;
                 try {
                     if (state.getCurrentPlayer().getType() == Player.Type.HUMAN) {
@@ -117,6 +105,18 @@ public class Game implements Runnable {
                     if (!playerDone) {
                         System.err.println("Error! Player not done but thread is interrupted!");
                         return;
+                    }
+                }
+                if (mode == Mode.CvC_STEP) {
+                    nextStep = false;
+                    try {
+                        while (!nextStep) Thread.sleep(60000);
+                    } catch (InterruptedException e) {
+                        if (over) break;
+                        if (!nextStep) {
+                            System.err.println("Error! Next step not activated but thread is interrupted!");
+                            return;
+                        }
                     }
                 }
                 Edge move = state.getCurrentPlayer().getNextMove();

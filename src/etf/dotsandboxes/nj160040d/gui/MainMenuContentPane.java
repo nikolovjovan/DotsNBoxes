@@ -91,7 +91,7 @@ public class MainMenuContentPane extends JPanel {
 
     private ChangeListener boardSizeChangeListener = e -> {
         int width = (int) boardWidthModel.getValue(), height = (int) boardHeightModel.getValue();
-        int maxTreeDepth = width * height + width + height;
+        int maxTreeDepth = 2 * width * height + width + height;
         for (int i = 0; i < 2; ++i) {
             int currentTreeDepth = Math.min(maxTreeDepth, (int) aiPlayerTreeDepthModel[i].getValue());
             aiPlayerTreeDepthModel[i] = new SpinnerNumberModel(currentTreeDepth, 1, maxTreeDepth, 1);

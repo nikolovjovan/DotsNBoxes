@@ -19,7 +19,6 @@ public class Node implements Comparable<Node> {
     public void setMove(Edge move) { this.move = move; }
 
     public State getState() { return state; }
-    public void setState(State state) { this.state = state; }
 
     public int getHeuristic() { return heuristic; }
     public void setHeuristic(int heuristic) { this.heuristic = heuristic; }

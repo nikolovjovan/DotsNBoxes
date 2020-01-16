@@ -12,7 +12,7 @@ public class RandomSolver implements Solver {
 
     @Override
     public Edge getNextMove() {
-        if (player.game.getState().getNumberOfAvailableMoves() == 0) return new Edge();
+        if (player.game.getState().getAvailableMovesCount() == 0) return new Edge();
         List<Edge> availableMoves = player.game.getState().getAvailableMoves();
         for (Edge move : availableMoves) if (player.game.getState().addsNthEdge(move, 4)) return move;
         return availableMoves.get((int) Math.floor(Math.random() * availableMoves.size()));

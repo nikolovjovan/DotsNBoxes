@@ -25,7 +25,7 @@ public class GameContentPane extends JPanel {
     private JPanel headerPanel, contentPanel, footerPanel;
     private ScorePanel scorePanel;
     private GameBoardPanel gameBoardPanel;
-    private JLabel heuristicLabel;
+    private JLabel nextMoveLabel, moveLabel, heuristicLabel;
     private DefaultListModel<String> movesListModel;
     private JList<String> movesList;
     private JScrollBar movesVerticalScrollBar;
@@ -46,7 +46,12 @@ public class GameContentPane extends JPanel {
     }
 
     public void startThinking() { showMessage(thinkingMessage, ColorValue.colorBlack); }
-    public void stopThinking() { showMessage(null, null); }
+    public void stopThinking() {
+        showMessage(null, null);
+        if (game.getMode() == Game.Mode.CvC_STEP) {
+            nextMoveLabel.setText("Next move: " + game.getState().getCurrentPlayer().getNextMove());
+        }
+    }
 
     public void update() {
         scorePanel.update();
@@ -71,19 +76,18 @@ public class GameContentPane extends JPanel {
 
     public void showHeuristic(Edge move) {
         if (game.getMode() != Game.Mode.CvC_STEP) return;
+        moveLabel.setText("Move: " + move + " (" + Edge.generateStringFromEdge(move) + ")");
         List<Node> nodes = game.getHeuristics();
-        if (nodes == null || nodes.size() == 0) return;
-        Node selectedNode = null;
-        for (Node node : nodes)
-            if (node.getMove().equals(move)) {
-                selectedNode = node;
-                break;
-            }
-        if (selectedNode == null) {
-            heuristicLabel.setText("No heuristic info");
-            return;
+        if (nodes == null || nodes.size() == 0) heuristicLabel.setText("Heuristic: None");
+        else {
+            Node selectedNode = null;
+            for (Node node : nodes)
+                if (node.getMove().equals(move)) {
+                    selectedNode = node;
+                    break;
+                }
+            heuristicLabel.setText("Heuristic: " + (selectedNode == null ? "None" : selectedNode.getHeuristic()));
         }
-        heuristicLabel.setText("Move " + move + (Edge.generateStringFromEdge(move)) + " heuristic: " + selectedNode.getHeuristic());
     }
 
     private void updateMessageRenderer(String message) {
@@ -163,25 +167,41 @@ public class GameContentPane extends JPanel {
         if (game.getMode() != Game.Mode.CvC_STEP) {
             SwingUtils.addComponentVertically(contentPanel, gameBoardPanel, constraints);
         } else {
+            constraints.weightx = 0;
+            SwingUtils.addHorizontalSpacer(contentPanel, constraints, 170);
+            constraints.weightx = 1;
             SwingUtils.addComponentHorizontally(contentPanel, gameBoardPanel, constraints);
-            constraints.weightx = constraints.weighty = 0;
-            SwingUtils.addHorizontalSpacer(contentPanel, constraints, 10);
-            JPanel analyticsPanel = new JPanel(new GridLayout(4, 1));
+            constraints.weightx = 0;
+            SwingUtils.addHorizontalSpacer(contentPanel, constraints, 20);
+            JPanel analyticsPanel = new JPanel(new GridBagLayout());
+            GridBagConstraints analyticsPanelConstraints = SwingUtils.createConstraints(5, true);
+            analyticsPanelConstraints.weightx = analyticsPanelConstraints.weighty = 0;
+            nextMoveLabel = new JLabel("Move: ");
+            nextMoveLabel.setFont(new Font("Arial", Font.BOLD, 16));
+            nextMoveLabel.setPreferredSize(new Dimension(150, nextMoveLabel.getPreferredSize().height));
+            SwingUtils.addComponentVertically(analyticsPanel, nextMoveLabel, analyticsPanelConstraints);
+            moveLabel = new JLabel("Move: ");
+            moveLabel.setFont(new Font("Arial", Font.BOLD, 16));
+            moveLabel.setPreferredSize(new Dimension(150, moveLabel.getPreferredSize().height));
+            SwingUtils.addComponentVertically(analyticsPanel, moveLabel, analyticsPanelConstraints);
             heuristicLabel = new JLabel("Heuristic: ");
-            heuristicLabel.setFont(new Font("Arial", Font.BOLD, 20));
-            analyticsPanel.add(heuristicLabel);
+            heuristicLabel.setPreferredSize(new Dimension(150, heuristicLabel.getPreferredSize().height));
+            heuristicLabel.setFont(new Font("Arial", Font.BOLD, 16));
+            SwingUtils.addComponentVertically(analyticsPanel, heuristicLabel, analyticsPanelConstraints);
             JLabel movesLabel = new JLabel("Moves:");
-            movesLabel.setFont(new Font("Arial", Font.BOLD, 20));
-            analyticsPanel.add(movesLabel);
+            movesLabel.setFont(new Font("Arial", Font.BOLD, 16));
+            movesLabel.setPreferredSize(new Dimension(150, movesLabel.getPreferredSize().height));
+            SwingUtils.addComponentVertically(analyticsPanel, movesLabel, analyticsPanelConstraints);
             movesListModel = new DefaultListModel<>();
             movesList = new JList<>(movesListModel);
-            movesList.setFixedCellWidth(80);
+            movesList.setFixedCellWidth(150);
+            ((DefaultListCellRenderer) movesList.getCellRenderer()).setHorizontalAlignment(SwingConstants.CENTER);
             JScrollPane movesListScrollPane = new JScrollPane(movesList);
             movesListScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
             movesVerticalScrollBar = movesListScrollPane.getVerticalScrollBar();
-            analyticsPanel.add(movesListScrollPane);
+            analyticsPanelConstraints.weighty = 1;
+            SwingUtils.addComponentVertically(analyticsPanel, movesListScrollPane, analyticsPanelConstraints);
             SwingUtils.addComponentHorizontally(contentPanel, analyticsPanel, constraints);
-            SwingUtils.addHorizontalSpacer(contentPanel, constraints, 20);
             constraints.gridx = 0;
             ++constraints.gridy;
         }
