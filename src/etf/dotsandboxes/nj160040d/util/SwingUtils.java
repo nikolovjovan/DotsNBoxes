@@ -6,8 +6,8 @@ import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,7 +15,8 @@ public class SwingUtils {
 
     public static BufferedImage loadImage(String fileName) {
         try {
-            return ImageIO.read(new File(fileName));
+            InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(fileName);
+            return is != null ? ImageIO.read(is) : null;
         } catch (IOException e) {
             return null;
         }

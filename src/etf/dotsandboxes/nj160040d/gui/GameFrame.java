@@ -1,7 +1,6 @@
 package etf.dotsandboxes.nj160040d.gui;
 
 import etf.dotsandboxes.nj160040d.Game;
-import etf.dotsandboxes.nj160040d.logic.Edge;
 import etf.dotsandboxes.nj160040d.util.SwingUtils;
 
 import javax.swing.*;
@@ -9,7 +8,7 @@ import java.awt.event.*;
 
 public class GameFrame extends JFrame {
 
-    private static final String iconFileName = "res/icon.png";
+    private static final String iconFileName = "etf/dotsandboxes/nj160040d/resources/icon.png";
     private static final int[] iconSizes = { 16, 20, 24, 32, 40, 48, 64, 128, 256, 512, 1024 };
 
     private Game game;

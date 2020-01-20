@@ -17,7 +17,7 @@ public class MainMenuContentPane extends JPanel {
     private static final byte[] playerColors = { ColorValue.BLUE, ColorValue.RED };
     private static final String[] aiDifficulties;
 
-    private static final String logoFileName = "res/title.png";
+    private static final String logoFileName = "etf/dotsandboxes/nj160040d/resources/title.png";
     private static final String titleText = "Dots & Boxes";
     private static final String titleFontName = "Comic Sans MS";
     private static final int titleFontSize = 60;
