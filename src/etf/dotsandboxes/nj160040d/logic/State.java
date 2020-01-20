@@ -85,18 +85,18 @@ public class State {
             parsedHeight = sc.nextInt();
             sc.nextLine();
             if (parsedWidth > 0 && parsedHeight > 0) {
-                System.out.println("Board size: " + parsedWidth + "x" + parsedHeight);
+//                System.out.println("Board size: " + parsedWidth + "x" + parsedHeight);
                 parsedMoves = new ArrayList<>();
                 while (sc.hasNextLine()) {
                     String move = sc.nextLine();
                     if (move.isEmpty()) continue;
-                    System.out.println("Read move: '" + move + "'");
+//                    System.out.println("Read move: '" + move + "'");
                     Edge parsedMove = Edge.parseEdgeFromString(move);
                     if (parsedMove == null) {
                         System.err.println("Error! Failed to parse move: '" + move + "'.");
                         return false;
                     }
-                    System.out.println("Parsed move: " + parsedMove);
+//                    System.out.println("Parsed move: " + parsedMove);
                     parsedMoves.add(parsedMove);
                 }
                 return true;
@@ -116,7 +116,7 @@ public class State {
         try (PrintWriter writer = new PrintWriter(gameStateFilePath, "UTF-8")) {
             writer.println(state.getWidth() + " " + state.getHeight());
             for (Edge move : state.game.getMoves()) {
-                System.out.println("Move: " + move + " generated string: " + Edge.generateStringFromEdge(move));
+//                System.out.println("Move: " + move + " generated string: " + Edge.generateStringFromEdge(move));
                 writer.println(Edge.generateStringFromEdge(move));
             }
             return true;

@@ -1,6 +1,7 @@
 package etf.dotsandboxes.nj160040d.gui;
 
 import etf.dotsandboxes.nj160040d.Game;
+import etf.dotsandboxes.nj160040d.logic.AIPlayer;
 import etf.dotsandboxes.nj160040d.logic.Edge;
 import etf.dotsandboxes.nj160040d.logic.Node;
 import etf.dotsandboxes.nj160040d.logic.State;
@@ -77,7 +78,7 @@ public class GameContentPane extends JPanel {
     public void showHeuristic(Edge move) {
         if (game.getMode() != Game.Mode.CvC_STEP) return;
         moveLabel.setText("Move: " + move + " (" + Edge.generateStringFromEdge(move) + ")");
-        List<Node> nodes = game.getHeuristics();
+        List<Node> nodes = ((AIPlayer) game.getState().getCurrentPlayer()).getHeuristics();
         if (nodes == null || nodes.size() == 0) heuristicLabel.setText("Heuristic: None");
         else {
             Node selectedNode = null;
@@ -161,12 +162,13 @@ public class GameContentPane extends JPanel {
         constraints.weighty = 0;
         SwingUtils.addVerticalSpacer(contentPanel, constraints, 10);
 
-        gameBoardPanel = new GameBoardPanel(game);
+        gameBoardPanel = new GameBoardPanel(game, this);
         constraints.weighty = 1;
 
         if (game.getMode() != Game.Mode.CvC_STEP) {
             SwingUtils.addComponentVertically(contentPanel, gameBoardPanel, constraints);
         } else {
+            // TODO: Make board centered, and possibly draw moves list for every mode
             constraints.weightx = 0;
             SwingUtils.addHorizontalSpacer(contentPanel, constraints, 170);
             constraints.weightx = 1;

@@ -43,11 +43,6 @@ public class GameFrame extends JFrame {
         ((GameContentPane) getContentPane()).update();
     }
 
-    public void showHeuristic(Edge move) {
-        if (!gameInProgress) return;
-        ((GameContentPane) getContentPane()).showHeuristic(move);
-    }
-
     private void changeContent(boolean gameInProgress) {
         clearContent();
         setContent(gameInProgress);

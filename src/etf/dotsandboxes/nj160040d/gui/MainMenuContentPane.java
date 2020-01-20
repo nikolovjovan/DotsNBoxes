@@ -32,6 +32,7 @@ public class MainMenuContentPane extends JPanel {
     private JPanel speedPanel;
     private JRadioButton modePvCRadioButton, modePvPRadioButton, modeCvCRadioButton, speedStep;
     private JTextField[] playerNameTextField;
+    @SuppressWarnings("rawtypes")
     private JComboBox[] aiPlayerDifficultyComboBox;
     private SpinnerModel[] aiPlayerTreeDepthModel;
     private JSpinner[] aiPlayerTreeDepthSpinner;

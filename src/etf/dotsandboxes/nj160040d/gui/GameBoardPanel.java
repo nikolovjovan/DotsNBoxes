@@ -21,6 +21,7 @@ public class GameBoardPanel extends JPanel {
     private static final int maxDotDiameter = Math.max(dotDiameter, highlightedDotDiameter);
 
     private Game game;
+    private GameContentPane gameContentPane;
 
     private int width, height, spacing, edgeLength;
     private boolean boardEnabled;
@@ -28,8 +29,9 @@ public class GameBoardPanel extends JPanel {
     private Point topLeft, bottomRight;
     private Edge highlightedEdge;
 
-    public GameBoardPanel(Game game) {
+    public GameBoardPanel(Game game, GameContentPane gameContentPane) {
         this.game = game;
+        this.gameContentPane = gameContentPane;
 
         this.width = game.getState().getWidth();
         this.height = game.getState().getHeight();
@@ -111,7 +113,7 @@ public class GameBoardPanel extends JPanel {
                     else highlightedEdge.invalidate();
                 }
                 if (highlightedEdge.isValid() && game.getState().isEdgeSet(highlightedEdge)) highlightedEdge.invalidate();
-                if (highlightedEdge.isValid() && game.getMode() == Game.Mode.CvC_STEP) game.showHeuristic(highlightedEdge);
+                if (highlightedEdge.isValid() && game.getMode() == Game.Mode.CvC_STEP) gameContentPane.showHeuristic(highlightedEdge);
                 repaint();
             }
         });

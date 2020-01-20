@@ -8,7 +8,5 @@ public class HumanPlayer extends Player {
         super(game, Type.HUMAN, name, colorValue);
     }
 
-    @Override
-    public Edge getNextMove() { return nextMove; }
     public void setNextMove(Edge nextMove) { this.nextMove.copy(nextMove); }
 }

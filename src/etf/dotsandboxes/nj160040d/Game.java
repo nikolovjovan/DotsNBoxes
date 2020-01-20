@@ -18,7 +18,6 @@ public class Game implements Runnable {
     private State state;
     private Mode mode;
     private List<Edge> moves;
-    private List<Node> heuristics;
     private boolean started, playerDone, nextStep, over, showMainMenu;
 
     public Game() {
@@ -31,10 +30,6 @@ public class Game implements Runnable {
     public Mode getMode() { return mode; }
 
     public List<Edge> getMoves() { return moves; }
-    public List<Node> getHeuristics() { return heuristics; }
-    public void setHeuristics(List<Node> heuristics) { this.heuristics = heuristics; }
-
-    public void showHeuristic(Edge move) { gameFrame.showHeuristic(move); }
 
     public boolean isOver() { return over; }
 

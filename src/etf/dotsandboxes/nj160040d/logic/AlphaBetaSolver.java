@@ -56,8 +56,8 @@ public class AlphaBetaSolver implements Solver {
 //        System.out.println("Depth: " + depth + " (" + (isReferencePlayer ? "MAX" : "MIN") + ") Move: " + state.getLastMove() + " Alpha: " + alpha + " Beta: " + beta);
 
         if (depth == 0 && cvcMode) {
-            if (player.game.getHeuristics() == null) player.game.setHeuristics(new ArrayList<>());
-            else player.game.getHeuristics().clear();
+            if (player.getHeuristics() == null) player.setHeuristics(new ArrayList<>());
+            else player.getHeuristics().clear();
         }
 
         Node resultNode = new Node(Edge.INVALID, isReferencePlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE);
@@ -74,7 +74,7 @@ public class AlphaBetaSolver implements Solver {
 //                System.out.print(" Next move " + (i + 1) + ": " + moves.get(i));
 //                if (turnByTurn) System.out.print(" closed boxes: " + closedBoxesNum);
 //                System.out.println(" heuristic: " + nextNode.getHeuristic());
-                if (depth == 0 && cvcMode) player.game.getHeuristics().add(nextNode);
+                if (depth == 0 && cvcMode) player.getHeuristics().add(nextNode);
                 if (isReferencePlayer && resultNode.getHeuristic() < nextNode.getHeuristic() ||
                         !isReferencePlayer && resultNode.getHeuristic() > nextNode.getHeuristic()) {
                     resultNode.setMove(moves.get(i));
@@ -97,7 +97,7 @@ public class AlphaBetaSolver implements Solver {
             int closedBoxesNum = -1;
             if (turnByTurn) closedBoxesNum = nextState.closeAllAvailableBoxes();
             nextNodes[i] = new Node(moves.get(i), nextState, getHeuristic(nextState));
-            if (depth == 0 && cvcMode) player.game.getHeuristics().add(nextNodes[i]);
+            if (depth == 0 && cvcMode) player.getHeuristics().add(nextNodes[i]);
 //            // TODO: Remove debug info
 //            System.out.print("Next move " + (i + 1) + ": " + moves.get(i));
 //            if (closedBoxesNum != -1) System.out.print(" closed boxes: " + closedBoxesNum);

@@ -2,6 +2,8 @@ package etf.dotsandboxes.nj160040d.logic;
 
 import etf.dotsandboxes.nj160040d.Game;
 
+import java.util.List;
+
 public class AIPlayer extends Player {
 
     public enum Difficulty {
@@ -29,6 +31,7 @@ public class AIPlayer extends Player {
 
     private int maxDepth;
     private Solver solver;
+    private List<Node> heuristics;
 
     public AIPlayer(Game game, String name, byte colorValue, String difficulty, int maxDepth) {
         super(game, Type.AI, name, colorValue);
@@ -52,6 +55,9 @@ public class AIPlayer extends Player {
     }
 
     public int getMaxDepth() { return maxDepth; }
+
+    public List<Node> getHeuristics() { return heuristics; }
+    public void setHeuristics(List<Node> heuristics) { this.heuristics = heuristics; }
 
     public long computeNextMove() {
         long startTime = System.nanoTime();
