@@ -68,6 +68,7 @@ public class SwingUtils {
     }
 
     public static void addComponentHorizontally(JPanel panel, Component component, GridBagConstraints constraints) {
+        if (component == null) return;
         if (constraints == null) {
             panel.add(component);
         } else {
@@ -77,6 +78,7 @@ public class SwingUtils {
     }
 
     public static void addComponentVertically(JPanel panel, Component component, GridBagConstraints constraints) {
+        if (component == null) return;
         if (constraints == null) {
             panel.add(component);
         } else {
@@ -85,18 +87,24 @@ public class SwingUtils {
         }
     }
 
-    public static void addHorizontalSpacer(JPanel panel, GridBagConstraints constraints, int width) {
-        if (width < 0) return;
+    public static Component createHorizontalSpacer(int width) {
         JLabel label = new JLabel();
         label.setPreferredSize(new Dimension(width, 5));
-        addComponentHorizontally(panel, label, constraints);
+        return label;
+    }
+
+    public static Component createVerticalSpacer(int height) {
+        JLabel label = new JLabel();
+        label.setPreferredSize(new Dimension(5, height));
+        return label;
+    }
+
+    public static void addHorizontalSpacer(JPanel panel, GridBagConstraints constraints, int width) {
+        addComponentHorizontally(panel, createHorizontalSpacer(width), constraints);
     }
 
     public static void addVerticalSpacer(JPanel panel, GridBagConstraints constraints, int height) {
-        if (height < 0) return;
-        JLabel label = new JLabel();
-        label.setPreferredSize(new Dimension(5, height));
-        addComponentVertically(panel, label, constraints);
+        addComponentVertically(panel, createVerticalSpacer(height), constraints);
     }
 
     public static void addSplitPanel(JPanel panel, GridBagConstraints constraints, JPanel leftPanel, JPanel rightPanel) {

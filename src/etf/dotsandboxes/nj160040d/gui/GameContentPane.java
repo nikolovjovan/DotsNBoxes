@@ -57,12 +57,10 @@ public class GameContentPane extends JPanel {
     public void update() {
         scorePanel.update();
         gameBoardPanel.update();
-        if (game.getMode() == Game.Mode.CvC_STEP) {
-            Edge move = game.getState().getPreviousMoves().peek();
-            movesListModel.addElement(move.toString() + " (" + Edge.generateStringFromEdge(move) + ")");
-            movesList.setSelectedIndex(movesListModel.getSize() - 1);
-            movesVerticalScrollBar.setValue(movesVerticalScrollBar.getMaximum());
-        }
+        Edge previousMove = game.getState().getPreviousMoves().peek();
+        movesListModel.addElement(previousMove.toString() + " (" + Edge.generateStringFromEdge(previousMove) + ")");
+        movesList.setSelectedIndex(movesListModel.getSize() - 1);
+        movesVerticalScrollBar.setValue(movesVerticalScrollBar.getMaximum());
         if (game.isOver()) {
             if (game.getState().getWinner() != null) {
                 showMessage(game.getState().getWinner().getName() + " Won!",
@@ -156,28 +154,15 @@ public class GameContentPane extends JPanel {
     }
 
     private void initContent() {
-        contentPanel = new JPanel(new GridBagLayout());
-        GridBagConstraints constraints = SwingUtils.createConstraints(5, true);
-
-        constraints.weighty = 0;
-        SwingUtils.addVerticalSpacer(contentPanel, constraints, 10);
+        contentPanel = new JPanel(new BorderLayout());
 
         gameBoardPanel = new GameBoardPanel(game, this);
-        constraints.weighty = 1;
 
-        if (game.getMode() != Game.Mode.CvC_STEP) {
-            SwingUtils.addComponentVertically(contentPanel, gameBoardPanel, constraints);
-        } else {
-            // TODO: Make board centered, and possibly draw moves list for every mode
-            constraints.weightx = 0;
-            SwingUtils.addHorizontalSpacer(contentPanel, constraints, 170);
-            constraints.weightx = 1;
-            SwingUtils.addComponentHorizontally(contentPanel, gameBoardPanel, constraints);
-            constraints.weightx = 0;
-            SwingUtils.addHorizontalSpacer(contentPanel, constraints, 20);
-            JPanel analyticsPanel = new JPanel(new GridBagLayout());
-            GridBagConstraints analyticsPanelConstraints = SwingUtils.createConstraints(5, true);
-            analyticsPanelConstraints.weightx = analyticsPanelConstraints.weighty = 0;
+        JPanel analyticsPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints analyticsPanelConstraints = SwingUtils.createConstraints(5, true);
+        analyticsPanelConstraints.weightx = analyticsPanelConstraints.weighty = 0;
+        SwingUtils.addHorizontalSpacer(analyticsPanel, analyticsPanelConstraints, 20);
+        if (game.getMode() == Game.Mode.CvC_STEP) {
             nextMoveLabel = new JLabel("Move: ");
             nextMoveLabel.setFont(new Font("Arial", Font.BOLD, 16));
             nextMoveLabel.setPreferredSize(new Dimension(150, nextMoveLabel.getPreferredSize().height));
@@ -190,26 +175,27 @@ public class GameContentPane extends JPanel {
             heuristicLabel.setPreferredSize(new Dimension(150, heuristicLabel.getPreferredSize().height));
             heuristicLabel.setFont(new Font("Arial", Font.BOLD, 16));
             SwingUtils.addComponentVertically(analyticsPanel, heuristicLabel, analyticsPanelConstraints);
-            JLabel movesLabel = new JLabel("Moves:");
-            movesLabel.setFont(new Font("Arial", Font.BOLD, 16));
-            movesLabel.setPreferredSize(new Dimension(150, movesLabel.getPreferredSize().height));
-            SwingUtils.addComponentVertically(analyticsPanel, movesLabel, analyticsPanelConstraints);
-            movesListModel = new DefaultListModel<>();
-            movesList = new JList<>(movesListModel);
-            movesList.setFixedCellWidth(150);
-            ((DefaultListCellRenderer) movesList.getCellRenderer()).setHorizontalAlignment(SwingConstants.CENTER);
-            JScrollPane movesListScrollPane = new JScrollPane(movesList);
-            movesListScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-            movesVerticalScrollBar = movesListScrollPane.getVerticalScrollBar();
-            analyticsPanelConstraints.weighty = 1;
-            SwingUtils.addComponentVertically(analyticsPanel, movesListScrollPane, analyticsPanelConstraints);
-            SwingUtils.addComponentHorizontally(contentPanel, analyticsPanel, constraints);
-            constraints.gridx = 0;
-            ++constraints.gridy;
         }
+        JLabel movesLabel = new JLabel("Previous moves:");
+        movesLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        movesLabel.setPreferredSize(new Dimension(150, movesLabel.getPreferredSize().height));
+        SwingUtils.addComponentVertically(analyticsPanel, movesLabel, analyticsPanelConstraints);
+        movesListModel = new DefaultListModel<>();
+        movesList = new JList<>(movesListModel);
+        movesList.setFixedCellWidth(150);
+        ((DefaultListCellRenderer) movesList.getCellRenderer()).setHorizontalAlignment(SwingConstants.CENTER);
+        JScrollPane movesListScrollPane = new JScrollPane(movesList);
+        movesListScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        movesListScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        movesVerticalScrollBar = movesListScrollPane.getVerticalScrollBar();
+        analyticsPanelConstraints.weighty = 1;
+        SwingUtils.addComponentVertically(analyticsPanel, movesListScrollPane, analyticsPanelConstraints);
 
-        constraints.weighty = 0;
-        SwingUtils.addVerticalSpacer(contentPanel, constraints, 10);
+        contentPanel.add(SwingUtils.createVerticalSpacer(10), BorderLayout.NORTH);
+        contentPanel.add(SwingUtils.createHorizontalSpacer(analyticsPanel.getPreferredSize().width), BorderLayout.WEST);
+        contentPanel.add(gameBoardPanel, BorderLayout.CENTER);
+        contentPanel.add(analyticsPanel, BorderLayout.EAST);
+        contentPanel.add(SwingUtils.createVerticalSpacer(10), BorderLayout.SOUTH);
     }
 
     private void initFooter() {
