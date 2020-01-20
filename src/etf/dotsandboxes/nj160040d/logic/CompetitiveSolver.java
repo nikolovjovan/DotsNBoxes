@@ -29,6 +29,6 @@ public class CompetitiveSolver extends AlphaBetaSolver {
                     !player.game.getState().addsNthEdge(move, 3) &&
                     !player.game.getState().addsNthEdge(move, 2)) return move;
         }
-        return search(player.game.getState(), moves, Integer.MIN_VALUE, Integer.MAX_VALUE, 0, true).getMove();
+        return getBestMove(moves, true);
     }
 }

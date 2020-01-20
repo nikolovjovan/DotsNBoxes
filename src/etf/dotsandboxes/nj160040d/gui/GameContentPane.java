@@ -57,8 +57,12 @@ public class GameContentPane extends JPanel {
     public void update() {
         scorePanel.update();
         gameBoardPanel.update();
-        Edge previousMove = game.getState().getPreviousMoves().peek();
-        movesListModel.addElement(previousMove.toString() + " (" + Edge.generateStringFromEdge(previousMove) + ")");
+        if (game.getState().getPreviousMoves().size() > movesListModel.size()) {
+            Edge previousMove = game.getState().getPreviousMoves().peek();
+            movesListModel.addElement(previousMove.toString() + " (" + Edge.generateStringFromEdge(previousMove) + ")");
+        } else if (!movesListModel.isEmpty()) {
+            movesListModel.removeElementAt(movesListModel.getSize() - 1);
+        }
         movesList.setSelectedIndex(movesListModel.getSize() - 1);
         movesVerticalScrollBar.setValue(movesVerticalScrollBar.getMaximum());
         if (game.isOver()) {
@@ -209,10 +213,14 @@ public class GameContentPane extends JPanel {
         JPanel buttonPanel = new JPanel(new GridBagLayout());
         GridBagConstraints buttonPanelConstraints = SwingUtils.createConstraints(5, false);
         if (game.getMode() == Game.Mode.CvC_STEP) {
-            JButton nextStepButton = new JButton("Next Step");
+            JButton nextStepButton = new JButton("Next Move");
             nextStepButton.setFont(new Font("Arial", Font.PLAIN, 40));
             nextStepButton.addActionListener(e -> game.nextStep());
             SwingUtils.addComponentHorizontally(buttonPanel, nextStepButton, buttonPanelConstraints);
+            JButton undoButton = new JButton("Undo Move");
+            undoButton.setFont(new Font("Arial", Font.PLAIN, 40));
+            undoButton.addActionListener(e -> game.undo());
+            SwingUtils.addComponentHorizontally(buttonPanel, undoButton, buttonPanelConstraints);
         }
         JButton endButton = new JButton("End Game");
         endButton.setFont(new Font("Arial", Font.PLAIN, 40));

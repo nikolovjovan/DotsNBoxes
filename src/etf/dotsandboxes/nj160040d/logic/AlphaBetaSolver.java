@@ -33,7 +33,7 @@ public class AlphaBetaSolver implements Solver {
             }
         }
         if (viableMoves.isEmpty()) return moves.get((int) Math.floor(Math.random() * moves.size()));
-        return search(player.game.getState(), viableMoves, Integer.MIN_VALUE, Integer.MAX_VALUE, 0, false).getMove();
+        return getBestMove(viableMoves, false);
     }
 
     protected int getHeuristic(State state) {
@@ -43,6 +43,64 @@ public class AlphaBetaSolver implements Solver {
                 HEURISTIC_TWO_EDGES_MULTI * state.getBoxCount(2);
         if (state.getCurrentPlayer() == player) return scoreHeuristic + edgeHeuristic;
         return scoreHeuristic - edgeHeuristic;
+    }
+
+    protected Node search(List<Edge> moves, int alpha, int beta, int depth, boolean turnByTurn) {
+        State state = player.game.getState();
+        if (moves.size() == 0) return new Node(Edge.INVALID, getHeuristic(state));
+        if (depth == player.getMaxDepth()) return new Node(moves.get((int) Math.floor(Math.random() * moves.size())), getHeuristic(state));
+
+        boolean isReferencePlayer = state.getCurrentPlayer() == player;
+        boolean cvcMode = player.game.getMode() == Game.Mode.CvC_STEP;
+
+        if (depth == 0 && cvcMode) {
+            if (player.getHeuristics() == null) player.setHeuristics(new ArrayList<>());
+            else player.getHeuristics().clear();
+        }
+
+        Node resultNode = new Node(Edge.INVALID, isReferencePlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE);
+
+        Node[] nextNodes = new Node[moves.size()];
+        for (int i = 0; i < nextNodes.length; ++i) {
+            state.makeMove(moves.get(i));
+            if (turnByTurn) state.closeAllAvailableBoxes();
+
+            nextNodes[i] = new Node(moves.get(i), getHeuristic(state));
+            if (depth == 0 && cvcMode) player.getHeuristics().add(nextNodes[i]);
+
+            state.undoMovesUntilInclusive(moves.get(i));
+        }
+        Arrays.sort(nextNodes);
+
+        for (int i = 0; i < nextNodes.length; ++i) {
+            state.makeMove(nextNodes[i].getMove());
+            if (turnByTurn) state.closeAllAvailableBoxes();
+
+            List<Edge> nextMoves = new ArrayList<>(nextNodes.length - 1);
+            for (int j = 0; j < nextNodes.length - 1; ++j) nextMoves.add(nextNodes[(j < i ? j : j + 1)].getMove());
+            Node nextNode = search(nextMoves, alpha, beta, depth + 1, turnByTurn);
+            if (depth == 0 && cvcMode) nextNodes[i].setHeuristic(nextNode.getHeuristic());
+
+            if (isReferencePlayer && resultNode.getHeuristic() < nextNode.getHeuristic() ||
+                    !isReferencePlayer && resultNode.getHeuristic() > nextNode.getHeuristic()) {
+                resultNode.setMove(nextNodes[i].getMove());
+                resultNode.setHeuristic(nextNode.getHeuristic());
+            }
+
+            if (state.getCurrentPlayerScore() == state.getCurrentPlayerScore() && (
+                    isReferencePlayer && nextNode.getHeuristic() >= beta ||
+                            !isReferencePlayer && nextNode.getHeuristic() <= alpha)) {
+                state.undoMovesUntilInclusive(nextNodes[i].getMove());
+                return resultNode;
+            }
+
+            if (isReferencePlayer) alpha = Math.max(alpha, resultNode.getHeuristic());
+            else beta = Math.max(beta, resultNode.getHeuristic());
+
+            state.undoMovesUntilInclusive(nextNodes[i].getMove());
+        }
+
+        return resultNode;
     }
 
     protected Node search(State state, List<Edge> moves, int alpha, int beta, int depth, boolean turnByTurn) {
@@ -123,5 +181,13 @@ public class AlphaBetaSolver implements Solver {
         }
 
         return resultNode;
+    }
+
+    protected Edge getBestMove(List<Edge> moves, boolean turnByTurn) {
+        player.game.getState().setCanModifyGame(false);
+        Node result = search(player.game.getState(), moves, Integer.MIN_VALUE, Integer.MAX_VALUE, 0, turnByTurn);
+//        Node result = search(moves, Integer.MIN_VALUE, Integer.MAX_VALUE, 0, turnByTurn); // WIP undo instead of copy
+        player.game.getState().setCanModifyGame(true);
+        return result.getMove();
     }
 }

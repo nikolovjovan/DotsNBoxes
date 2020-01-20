@@ -19,6 +19,8 @@ public class State {
     private Player player1, player2;
     private int width, height;
 
+    private boolean canModifyGame;
+
     private Player currentPlayer, winner;
     private int score1, score2, maxScore;
 
@@ -27,7 +29,6 @@ public class State {
     private int[] boxEdgeCount;
 
     private byte[][] hEdgeMatrix, vEdgeMatrix, boxMatrix;
-    private boolean canModifyGame;
 
     public State(Game game, Player player1, Player player2, int width, int height) {
         this.game = game;
@@ -131,6 +132,9 @@ public class State {
     public int getWidth() { return width; }
     public int getHeight() { return height; }
 
+    public boolean getCanModifyGame() { return canModifyGame; }
+    public void setCanModifyGame(boolean canModifyGame) { this.canModifyGame = canModifyGame; }
+
     public Player getCurrentPlayer() { return currentPlayer; }
     public Player getWinner() { return winner; }
 
@@ -156,10 +160,10 @@ public class State {
     }
 
     public byte getBoxValue(int x, int y) { return boxMatrix[y][x]; }
-    public boolean isBoxSet(int x, int y) { return getBoxValue(x, y) != 0; }
+    public boolean isBoxSet(int x, int y) { return getBoxValue(x, y) != ColorValue.TRANSPARENT; }
 
     public byte getEdgeValue(boolean horizontal, int x, int y) { return horizontal ? hEdgeMatrix[y][x] : vEdgeMatrix[y][x]; }
-    public boolean isEdgeSet(boolean horizontal, int x, int y) { return getEdgeValue(horizontal, x, y) != 0; }
+    public boolean isEdgeSet(boolean horizontal, int x, int y) { return getEdgeValue(horizontal, x, y) != ColorValue.TRANSPARENT; }
 
     public byte getEdgeValue(Edge edge) {
         return edge.isHorizontal() ? hEdgeMatrix[edge.getY()][edge.getX()] : vEdgeMatrix[edge.getY()][edge.getX()];
@@ -168,7 +172,7 @@ public class State {
         if (edge.isHorizontal()) hEdgeMatrix[edge.getY()][edge.getX()] = value;
         else vEdgeMatrix[edge.getY()][edge.getX()] = value;
     }
-    public boolean isEdgeSet(Edge edge) { return getEdgeValue(edge) != 0; }
+    public boolean isEdgeSet(Edge edge) { return getEdgeValue(edge) != ColorValue.TRANSPARENT; }
 
     public boolean isTopEdgeSet(int x, int y) { return isEdgeSet(true, x, y); }
     public boolean isBottomEdgeSet(int x, int y) { return isEdgeSet(true, x, y + 1); }
@@ -241,11 +245,85 @@ public class State {
                 playsAgain = true;
             }
         }
-        if (currentPlayer == player1) score1 = score;
-        else score2 = score;
-        if (!playsAgain) currentPlayer = currentPlayer.equals(player1) ? player2 : player1;
+        if (playsAgain) {
+            if (currentPlayer == player1) score1 = score;
+            else score2 = score;
+        } else {
+            if (currentPlayer == player1) currentPlayer = player2;
+            else currentPlayer = player1;
+        }
         if (score1 + score2 == getMaxScore()) winner = score1 > score2 ? player1 : (score1 < score2 ? player2 : null);
         if (canModifyGame && availableMovesCount == 0) game.endGame();
+        return true;
+    }
+
+    public boolean undoMove() {
+        if (previousMoves == null || previousMoves.empty() || !isEdgeSet(previousMoves.peek())) return false;
+
+        Edge previousMove = previousMoves.pop();
+        int x = previousMove.getX(), y = previousMove.getY();
+
+        availableMovesCount++;
+
+        int score = currentPlayer == player1 ? score1 : score2;
+        boolean playedAgain = false;
+        if (previousMove.isHorizontal()) {
+            if (y > 0) {
+                int edgeCount = getEdgeCount(x, y - 1);
+                boxEdgeCount[edgeCount - 1]++;
+                boxEdgeCount[edgeCount]--;
+                if (edgeCount == 4) {
+                    boxMatrix[y - 1][x] = ColorValue.TRANSPARENT;
+                    score--;
+                    playedAgain = true;
+                }
+            }
+        } else {
+            if (x > 0) {
+                int edgeCount = getEdgeCount(x - 1, y);
+                boxEdgeCount[edgeCount - 1]++;
+                boxEdgeCount[edgeCount]--;
+                if (edgeCount == 4) {
+                    boxMatrix[y][x - 1] = ColorValue.TRANSPARENT;
+                    score--;
+                    playedAgain = true;
+                }
+            }
+        }
+        if (previousMove.isHorizontal() && y < height || !previousMove.isHorizontal() && x < width) {
+            int edgeCount = getEdgeCount(x, y);
+            boxEdgeCount[edgeCount - 1]++;
+            boxEdgeCount[edgeCount]--;
+            if (edgeCount == 4) {
+                boxMatrix[y][x] = ColorValue.TRANSPARENT;
+                score--;
+                playedAgain = true;
+            }
+        }
+        if (playedAgain) {
+            if (currentPlayer == player1) score1 = score;
+            else score2 = score;
+        } else {
+            if (currentPlayer == player1) currentPlayer = player2;
+            else currentPlayer = player1;
+        }
+        if (winner != null) winner = null;
+
+        if (!previousMoves.empty()) setEdgeValue(previousMoves.peek(), currentPlayer.getColorValue());
+        setEdgeValue(previousMove, ColorValue.TRANSPARENT);
+
+        return true;
+    }
+
+    public boolean undoMovesUntilExclusive(Edge move) {
+        if (previousMoves == null || previousMoves.empty() || !previousMoves.contains(move) || !isEdgeSet(move)) return false;
+        while (!previousMoves.empty() && previousMoves.peek() != move) undoMove();
+        return true;
+    }
+
+    public boolean undoMovesUntilInclusive(Edge move) {
+        if (!undoMovesUntilExclusive(move)) return false;
+        undoMove();
         return true;
     }
 

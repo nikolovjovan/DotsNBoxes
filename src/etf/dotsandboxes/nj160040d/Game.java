@@ -15,12 +15,12 @@ public class Game implements Runnable {
     private GameFrame gameFrame;
     private State state;
     private Mode mode;
-    private boolean started, playerDone, nextStep, over, showMainMenu;
+    private boolean started, playerDone, nextStep, undoMove, over, showMainMenu;
 
     public Game() {
         this.thread = new Thread(this);
         this.gameFrame = new GameFrame(this);
-        this.started = this.playerDone = this.over = this.showMainMenu = false;
+        this.started = this.playerDone = this.nextStep = this.undoMove = this.over = this.showMainMenu = false;
     }
 
     public State getState() { return state; }
@@ -46,7 +46,16 @@ public class Game implements Runnable {
     }
 
     public void nextStep() {
+        if (over) return;
         nextStep = true;
+        undoMove = false;
+        if (!Thread.currentThread().equals(thread)) thread.interrupt();
+    }
+
+    public void undo() {
+        if (over) return;
+        nextStep = true;
+        undoMove = true;
         if (!Thread.currentThread().equals(thread)) thread.interrupt();
     }
 
@@ -100,9 +109,18 @@ public class Game implements Runnable {
                         if (!nextStep) System.err.println("Error! Next step not activated but thread is interrupted!");
                     }
                 }
-                Edge move = state.getCurrentPlayer().getNextMove();
-                if (state.makeMove(move)) gameFrame.update();
-                else System.err.println("Error! Failed to make move: " + move);
+                if (undoMove) {
+                    if (state.getPreviousMoves().empty()) continue;
+                    if (state.undoMove()) gameFrame.update();
+                    else System.err.println("Error! Failed to undo move: " + state.getPreviousMoves().peek());
+                } else {
+                    if (state.getAvailableMovesCount() == 0) break;
+                    if (state.makeMove(state.getCurrentPlayer().getNextMove())) {
+                        gameFrame.update();
+                        if (state.getWinner() != null) over = true;
+                    }
+                    else System.err.println("Error! Failed to make move: " + state.getCurrentPlayer().getNextMove());
+                }
             }
             try {
                 while (!showMainMenu) Thread.sleep(60000);
@@ -110,9 +128,7 @@ public class Game implements Runnable {
                 if (!showMainMenu) System.err.println("Error! Game is not finished but thread is interrupted!");
             }
             gameFrame.showMainMenu();
-            started = false;
-            over = false;
-            showMainMenu = false;
+            started = playerDone = nextStep = undoMove = over = showMainMenu = false;
         }
     }
 
