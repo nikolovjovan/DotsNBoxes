@@ -7,6 +7,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Stack;
 
 public class State {
 
@@ -21,7 +22,7 @@ public class State {
     private Player currentPlayer, winner;
     private int score1, score2, maxScore;
 
-    private Edge lastMove;
+    private Stack<Edge> previousMoves;
     private int availableMovesCount;
     private int[] boxEdgeCount;
 
@@ -40,7 +41,7 @@ public class State {
         this.score1 = this.score2 = 0;
         this.maxScore = this.width * this.height;
 
-        this.lastMove = new Edge();
+        this.previousMoves = new Stack<>();
         this.availableMovesCount = 2 * this.width * this.height + this.width + this.height;
         this.boxEdgeCount = new int[5];
         this.boxEdgeCount[0] = this.width * this.height;
@@ -62,7 +63,7 @@ public class State {
         clone.score1 = score1;
         clone.score2 = score2;
 
-        clone.lastMove = lastMove.getClone();
+        for (Edge move : previousMoves) clone.previousMoves.push(move);
         clone.availableMovesCount = availableMovesCount;
 
         for (int i = 0; i <= height; ++i)
@@ -85,18 +86,15 @@ public class State {
             parsedHeight = sc.nextInt();
             sc.nextLine();
             if (parsedWidth > 0 && parsedHeight > 0) {
-//                System.out.println("Board size: " + parsedWidth + "x" + parsedHeight);
                 parsedMoves = new ArrayList<>();
                 while (sc.hasNextLine()) {
                     String move = sc.nextLine();
                     if (move.isEmpty()) continue;
-//                    System.out.println("Read move: '" + move + "'");
                     Edge parsedMove = Edge.parseEdgeFromString(move);
                     if (parsedMove == null) {
                         System.err.println("Error! Failed to parse move: '" + move + "'.");
                         return false;
                     }
-//                    System.out.println("Parsed move: " + parsedMove);
                     parsedMoves.add(parsedMove);
                 }
                 return true;
@@ -114,9 +112,8 @@ public class State {
     public static boolean tryExportGameStateToFile(State state, String gameStateFilePath) {
         if (state == null) return false;
         try (PrintWriter writer = new PrintWriter(gameStateFilePath, "UTF-8")) {
-            writer.println(state.getWidth() + " " + state.getHeight());
-            for (Edge move : state.game.getMoves()) {
-//                System.out.println("Move: " + move + " generated string: " + Edge.generateStringFromEdge(move));
+            writer.println(state.width + " " + state.height);
+            for (Edge move : state.previousMoves) {
                 writer.println(Edge.generateStringFromEdge(move));
             }
             return true;
@@ -142,6 +139,8 @@ public class State {
 
     public int getMaxScore() { return maxScore; }
     public int getCurrentPlayerScore() { return currentPlayer == player1 ? score1 : score2; }
+
+    public Stack<Edge> getPreviousMoves() { return previousMoves; }
 
     public int getAvailableMovesCount() { return availableMovesCount; }
 
@@ -202,8 +201,8 @@ public class State {
     public boolean makeMove(Edge move) {
         if (move == null || !move.isValid() || isEdgeSet(move) || availableMovesCount == 0) return false;
         int x = move.getX(), y = move.getY();
-        if (lastMove.isValid()) setEdgeValue(lastMove, ColorValue.BLACK);
-        lastMove.copy(move);
+        if (!previousMoves.empty()) setEdgeValue(previousMoves.peek(), ColorValue.BLACK);
+        previousMoves.push(move);
         availableMovesCount--;
         if (availableMovesCount == 0) setEdgeValue(move, ColorValue.BLACK);
         else setEdgeValue(move, ColorValue.getLastEdgeColor(currentPlayer.getColorValue()));
@@ -276,7 +275,4 @@ public class State {
         }
         return boxCount;
     }
-
-//    // TODO: REMOVE THIS
-//    public Edge getLastMove() { return lastMove; }
 }

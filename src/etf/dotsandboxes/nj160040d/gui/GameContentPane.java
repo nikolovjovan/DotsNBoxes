@@ -58,7 +58,7 @@ public class GameContentPane extends JPanel {
         scorePanel.update();
         gameBoardPanel.update();
         if (game.getMode() == Game.Mode.CvC_STEP) {
-            Edge move = game.getMoves().get(game.getMoves().size() - 1);
+            Edge move = game.getState().getPreviousMoves().peek();
             movesListModel.addElement(move.toString() + " (" + Edge.generateStringFromEdge(move) + ")");
             movesList.setSelectedIndex(movesListModel.getSize() - 1);
             movesVerticalScrollBar.setValue(movesVerticalScrollBar.getMaximum());

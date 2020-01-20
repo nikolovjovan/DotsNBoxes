@@ -4,8 +4,6 @@ import etf.dotsandboxes.nj160040d.gui.GameFrame;
 import etf.dotsandboxes.nj160040d.logic.*;
 
 import java.awt.EventQueue;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Game implements Runnable {
 
@@ -17,7 +15,6 @@ public class Game implements Runnable {
     private GameFrame gameFrame;
     private State state;
     private Mode mode;
-    private List<Edge> moves;
     private boolean started, playerDone, nextStep, over, showMainMenu;
 
     public Game() {
@@ -28,8 +25,6 @@ public class Game implements Runnable {
 
     public State getState() { return state; }
     public Mode getMode() { return mode; }
-
-    public List<Edge> getMoves() { return moves; }
 
     public boolean isOver() { return over; }
 
@@ -65,6 +60,7 @@ public class Game implements Runnable {
         if (!Thread.currentThread().equals(thread)) thread.interrupt();
     }
 
+    @SuppressWarnings("InfiniteLoopStatement")
     @Override
     public void run() {
         gameFrame.setVisible(true);
@@ -72,12 +68,8 @@ public class Game implements Runnable {
             try {
                 while (!started) Thread.sleep(60000);
             } catch (InterruptedException e) {
-                if (!started) {
-                    System.err.println("Error! Game is not started but thread is interrupted!");
-                    return;
-                }
+                if (!started) System.err.println("Error! Game is not started but thread is interrupted!");
             }
-            moves = new ArrayList<>();
             gameFrame.startGame();
             while (!over) {
                 playerDone = false;
@@ -97,10 +89,7 @@ public class Game implements Runnable {
                     }
                 } catch (InterruptedException e) {
                     if (over) break;
-                    if (!playerDone) {
-                        System.err.println("Error! Player not done but thread is interrupted!");
-                        return;
-                    }
+                    if (!playerDone) System.err.println("Error! Player not done but thread is interrupted!");
                 }
                 if (mode == Mode.CvC_STEP) {
                     nextStep = false;
@@ -108,27 +97,17 @@ public class Game implements Runnable {
                         while (!nextStep) Thread.sleep(60000);
                     } catch (InterruptedException e) {
                         if (over) break;
-                        if (!nextStep) {
-                            System.err.println("Error! Next step not activated but thread is interrupted!");
-                            return;
-                        }
+                        if (!nextStep) System.err.println("Error! Next step not activated but thread is interrupted!");
                     }
                 }
                 Edge move = state.getCurrentPlayer().getNextMove();
-                if (state.makeMove(move)) {
-                    moves.add(move.getClone());
-                    gameFrame.update();
-                } else {
-                    System.err.println("Error! Failed to make move: " + move);
-                }
+                if (state.makeMove(move)) gameFrame.update();
+                else System.err.println("Error! Failed to make move: " + move);
             }
             try {
                 while (!showMainMenu) Thread.sleep(60000);
             } catch (InterruptedException e) {
-                if (!showMainMenu) {
-                    System.err.println("Error! Game is not finished but thread is interrupted!");
-                    return;
-                }
+                if (!showMainMenu) System.err.println("Error! Game is not finished but thread is interrupted!");
             }
             gameFrame.showMainMenu();
             started = false;
