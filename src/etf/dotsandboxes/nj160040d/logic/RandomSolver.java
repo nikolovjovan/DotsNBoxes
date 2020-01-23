@@ -1,6 +1,6 @@
 package etf.dotsandboxes.nj160040d.logic;
 
-import java.util.List;
+import etf.dotsandboxes.nj160040d.util.UnsafeLinkedList;
 
 public class RandomSolver implements Solver {
 
@@ -12,8 +12,8 @@ public class RandomSolver implements Solver {
 
     @Override
     public Edge getNextMove() {
-        if (player.game.getState().getAvailableMovesCount() == 0) return new Edge();
-        List<Edge> availableMoves = player.game.getState().getAvailableMoves();
+        UnsafeLinkedList<Edge> availableMoves = player.game.getState().getAvailableMoves();
+        if (availableMoves.isEmpty()) return new Edge();
         for (Edge move : availableMoves) if (player.game.getState().addsNthEdge(move, 4)) return move;
         return availableMoves.get((int) Math.floor(Math.random() * availableMoves.size()));
     }

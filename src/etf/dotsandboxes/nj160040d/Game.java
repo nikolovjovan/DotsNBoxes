@@ -87,7 +87,11 @@ public class Game implements Runnable {
                         while (!playerDone) Thread.sleep(60000);
                     } else {
                         gameFrame.startThinking();
+                        State prev = state.getClone();
                         long computeTime = ((AIPlayer) state.getCurrentPlayer()).computeNextMove();
+                        if (!prev.equals(state)) {
+                            System.err.println("Error! Computing next move changed state!!!");
+                        }
                         if (mode == Mode.PvC || mode == Mode.PvP) {
                             if (computeTime < moveTime) {
                                 long timeLeft = moveTime - computeTime;
@@ -114,7 +118,7 @@ public class Game implements Runnable {
                     if (state.undoMove()) gameFrame.update();
                     else System.err.println("Error! Failed to undo move: " + state.getPreviousMoves().peek());
                 } else {
-                    if (state.getAvailableMovesCount() == 0) break;
+                    if (state.getAvailableMoves().isEmpty()) break;
                     if (state.makeMove(state.getCurrentPlayer().getNextMove())) {
                         gameFrame.update();
                         if (state.getWinner() != null) over = true;

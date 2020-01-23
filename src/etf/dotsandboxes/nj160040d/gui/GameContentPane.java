@@ -81,7 +81,7 @@ public class GameContentPane extends JPanel {
         if (game.getMode() != Game.Mode.CvC_STEP) return;
         moveLabel.setText("Move: " + move + " (" + Edge.generateStringFromEdge(move) + ")");
         List<Node> nodes = ((AIPlayer) game.getState().getCurrentPlayer()).getHeuristics();
-        if (nodes == null || nodes.size() == 0) heuristicLabel.setText("Heuristic: None");
+        if (nodes == null || nodes.isEmpty()) heuristicLabel.setText("Heuristic: None");
         else {
             Node selectedNode = null;
             for (Node node : nodes)

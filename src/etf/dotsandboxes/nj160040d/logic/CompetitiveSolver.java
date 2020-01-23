@@ -1,7 +1,8 @@
 package etf.dotsandboxes.nj160040d.logic;
 
+import etf.dotsandboxes.nj160040d.util.UnsafeLinkedList;
+
 import java.util.Collections;
-import java.util.List;
 
 public class CompetitiveSolver extends AlphaBetaSolver {
 
@@ -21,14 +22,14 @@ public class CompetitiveSolver extends AlphaBetaSolver {
 
     @Override
     public Edge getNextMove() {
-        if (player.game.getState().getAvailableMovesCount() == 0) return Edge.INVALID;
-        List<Edge> moves = player.game.getState().getAvailableMoves();
-        Collections.shuffle(moves);
-        for (Edge move : moves) {
+        UnsafeLinkedList<Edge> availableMoves = new UnsafeLinkedList<>(player.game.getState().getAvailableMoves());
+        if (availableMoves.isEmpty()) return Edge.INVALID;
+        Collections.shuffle(availableMoves);
+        for (Edge move : availableMoves) {
             if (!player.game.getState().addsNthEdge(move, 4) &&
                     !player.game.getState().addsNthEdge(move, 3) &&
                     !player.game.getState().addsNthEdge(move, 2)) return move;
         }
-        return getBestMove(moves, true);
+        return getBestMove(availableMoves, true);
     }
 }

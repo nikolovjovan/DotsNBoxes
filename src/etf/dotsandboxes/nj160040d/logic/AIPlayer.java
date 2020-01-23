@@ -56,6 +56,9 @@ public class AIPlayer extends Player {
 
     public int getMaxDepth() { return maxDepth; }
 
+    // TODO: Remove
+    public void setMaxDepth(int maxDepth) { this.maxDepth = maxDepth; }
+
     public List<Node> getHeuristics() { return heuristics; }
     public void setHeuristics(List<Node> heuristics) { this.heuristics = heuristics; }
 
